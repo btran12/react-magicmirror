@@ -18,7 +18,9 @@ import {
   Switch,
   FormControlLabel,
   Autocomplete,
+  IconButton,
 } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 import { WidgetContext } from '../context/WidgetContext';
 
 const FALLBACK_CITIES = [
@@ -46,6 +48,7 @@ const WIDGET_OPTIONS = [
   { value: 'calendar', label: 'Calendar' },
   { value: 'news', label: 'News' },
   { value: 'compliments', label: 'Compliments' },
+  { value: 'stocks', label: 'Stocks' },
 ];
 
 const WIDGET_LABELS = {
@@ -54,6 +57,7 @@ const WIDGET_LABELS = {
   calendar: 'Calendar',
   news: 'News',
   compliments: 'Compliments',
+  stocks: 'Stocks',
 };
 
 const GRID_LAYOUT = [
@@ -78,6 +82,7 @@ const DEFAULT_WIDGET_FADE = {
   calendar: false,
   news: false,
   compliments: false,
+  stocks: false,
 };
 
 const fieldStyles = {
@@ -149,6 +154,13 @@ const createWidgetSettingsForType = (widgetType, defaults) => {
         location: defaults.location || 'New York, New York',
         showFade: DEFAULT_WIDGET_FADE.compliments,
       };
+    case 'stocks':
+      return {
+        widgetType,
+        finnhubApiKey: defaults.finnhubApiKey || '',
+        stockTickers: [],
+        showFade: DEFAULT_WIDGET_FADE.stocks,
+      };
     default:
       return {
         widgetType,
@@ -181,6 +193,10 @@ const buildSettingsDefaultsFromInstances = (layoutWidgets, widgetSettingsMap, pr
 
     if (widgetType === 'news' && instanceSettings.newsApiKey) {
       nextSettings.newsApiKey = instanceSettings.newsApiKey;
+    }
+
+    if (widgetType === 'stocks' && instanceSettings.finnhubApiKey) {
+      nextSettings.finnhubApiKey = instanceSettings.finnhubApiKey;
     }
 
     if (widgetType === 'compliments') {
@@ -461,8 +477,12 @@ export const SettingsPanel = ({ isOpen, onClose }) => {
               value={currentSettings.openweatherApiKey || ''}
               onChange={(e) => handleWidgetSettingChange(position, 'openweatherApiKey', e.target.value)}
               placeholder="Enter your API key"
+              helperText="Required for weather data and city suggestions (openweathermap.org/api)"
               variant="outlined"
-              sx={fieldStyles}
+              sx={{
+                ...fieldStyles,
+                '& .MuiFormHelperText-root': { color: '#999999' },
+              }}
             />
             {renderFadeToggle(position)}
           </Stack>
@@ -493,8 +513,12 @@ export const SettingsPanel = ({ isOpen, onClose }) => {
               value={currentSettings.newsApiKey || ''}
               onChange={(e) => handleWidgetSettingChange(position, 'newsApiKey', e.target.value)}
               placeholder="Enter your API key"
+              helperText="Get a key from newsapi.org to load top headlines"
               variant="outlined"
-              sx={fieldStyles}
+              sx={{
+                ...fieldStyles,
+                '& .MuiFormHelperText-root': { color: '#999999' },
+              }}
             />
             {renderFadeToggle(position)}
           </Stack>
@@ -525,11 +549,89 @@ export const SettingsPanel = ({ isOpen, onClose }) => {
               onChange={(e) => handleWidgetSettingChange(position, 'openweatherApiKey', e.target.value)}
               placeholder="Enter your API key"
               variant="outlined"
-              sx={fieldStyles}
+              helperText="Optional: enables weather-aware compliments (openweathermap.org/api)"
+              sx={{
+                ...fieldStyles,
+                '& .MuiFormHelperText-root': { color: '#999999' },
+              }}
             />
             {renderFadeToggle(position)}
           </Stack>
         );
+      case 'stocks': {
+        const currentTickers = currentSettings.stockTickers || [];
+        return (
+          <Stack spacing={2}>
+            <TextField
+              fullWidth
+              label="Finnhub API Key"
+              type="password"
+              value={currentSettings.finnhubApiKey || ''}
+              onChange={(e) => handleWidgetSettingChange(position, 'finnhubApiKey', e.target.value)}
+              placeholder="Enter your Finnhub token"
+              helperText="Free tier at finnhub.io — 60 calls/min"
+              variant="outlined"
+              sx={{
+                ...fieldStyles,
+                '& .MuiFormHelperText-root': { color: '#999999' },
+              }}
+            />
+            <Box>
+              <Typography sx={{ color: '#cccccc', fontSize: '0.85rem', mb: 1 }}>
+                Tickers ({currentTickers.length}/10)
+              </Typography>
+              <Stack spacing={1}>
+                {currentTickers.map((ticker, idx) => (
+                  <Box key={idx} sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                    <TextField
+                      size="small"
+                      value={ticker}
+                      onChange={(e) => {
+                        const next = [...currentTickers];
+                        next[idx] = e.target.value.toUpperCase();
+                        handleWidgetSettingChange(position, 'stockTickers', next);
+                      }}
+                      placeholder="e.g. AAPL"
+                      variant="outlined"
+                      sx={{ flex: 1, ...fieldStyles }}
+                      inputProps={{ maxLength: 10 }}
+                    />
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        const next = currentTickers.filter((_, i) => i !== idx);
+                        handleWidgetSettingChange(position, 'stockTickers', next);
+                      }}
+                      sx={{ color: '#888888', '&:hover': { color: '#ff6b6b' } }}
+                    >
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
+                ))}
+                {currentTickers.length < 10 && (
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => {
+                      handleWidgetSettingChange(position, 'stockTickers', [...currentTickers, '']);
+                    }}
+                    sx={{
+                      color: '#2196f3',
+                      borderColor: '#2196f3',
+                      '&:hover': { borderColor: '#1976d2', bgcolor: 'rgba(33,150,243,0.08)' },
+                      textTransform: 'none',
+                      alignSelf: 'flex-start',
+                    }}
+                  >
+                    + Add Ticker
+                  </Button>
+                )}
+              </Stack>
+            </Box>
+            {renderFadeToggle(position)}
+          </Stack>
+        );
+      }
       default:
         return null;
     }

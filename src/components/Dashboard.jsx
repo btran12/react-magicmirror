@@ -6,6 +6,7 @@ import { Weather } from './widgets/Weather';
 import { Calendar } from './widgets/Calendar';
 import { News } from './widgets/News';
 import { Compliments } from './widgets/Compliments';
+import { Stocks } from './widgets/Stocks';
 import { Notifications } from './Notifications';
 import { SettingsPanel } from './SettingsPanel';
 import { WidgetContext } from '../context/WidgetContext';
@@ -22,6 +23,7 @@ const WIDGET_COMPONENTS = {
   calendar: Calendar,
   news: News,
   compliments: Compliments,
+  stocks: Stocks,
 };
 
 export const Dashboard = () => {
@@ -62,6 +64,8 @@ export const Dashboard = () => {
       return <WidgetComponent icsUrl={widgetSettings.icsUrl} showFade={widgetSettings.showFade} />;
     } else if (widgetType === 'clock') {
       return <WidgetComponent clockFormat={widgetSettings.clockFormat} showFade={widgetSettings.showFade} />;
+    } else if (widgetType === 'stocks') {
+      return <WidgetComponent apiKey={widgetSettings.finnhubApiKey} tickers={widgetSettings.stockTickers || []} showFade={widgetSettings.showFade} />;
     } else {
       return <WidgetComponent />;
     }

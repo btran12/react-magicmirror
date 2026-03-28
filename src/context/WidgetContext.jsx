@@ -20,11 +20,13 @@ const LEGACY_FADE_SETTINGS = {
   calendar: false,
   news: false,
   compliments: false,
+  stocks: false,
 };
 
 const getInitialSettings = () => ({
   openweatherApiKey: localStorage.getItem('openweatherApiKey') || '',
   newsApiKey: localStorage.getItem('newsApiKey') || '',
+  finnhubApiKey: localStorage.getItem('finnhubApiKey') || '',
   location: localStorage.getItem('location') || 'New York, New York',
   tempUnit: localStorage.getItem('tempUnit') || 'F',
   clockFormat: localStorage.getItem('clockFormat') || '24h',
@@ -95,6 +97,13 @@ const createWidgetSettingsForType = (widgetType, settings, fadeSettings) => {
         openweatherApiKey: settings.openweatherApiKey,
         location: settings.location,
         showFade: fadeSettings.compliments,
+      };
+    case 'stocks':
+      return {
+        widgetType,
+        finnhubApiKey: settings.finnhubApiKey,
+        stockTickers: [],
+        showFade: fadeSettings.stocks,
       };
     default:
       return {
