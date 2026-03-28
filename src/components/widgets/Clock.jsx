@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Box, Button } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 import { Widget } from '../Widget';
 import { WidgetContext } from '../../context/WidgetContext';
 
@@ -24,14 +24,34 @@ export const Clock = () => {
   const minutes = time.getMinutes().toString().padStart(2, '0');
   const seconds = time.getSeconds().toString().padStart(2, '0');
   const ampm = format24 ? '' : (time.getHours() >= 12 ? 'PM' : 'AM');
+  
+  const dateString = time.toLocaleDateString('en-US', { 
+    weekday: 'long', 
+    month: 'long', 
+    day: 'numeric', 
+    year: 'numeric' 
+  });
 
   return (
     <Widget>
-      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-        <Box sx={{ fontSize: '3.75rem', fontWeight: 'light', fontFamily: 'monospace', mb: 2 }}>
-          {hours}:{minutes}:{seconds}
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+        {/* Date */}
+        <Typography fontWeight={'light'} fontSize={'1.75rem'} fontFamily={'monospace'} color={'#888888'}>
+          {dateString}
+        </Typography>
+        
+        {/* Time */}
+        <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'left', gap: 0.5 }}>
+          <Typography fontWeight={'light'} fontSize={'3.75rem'} fontFamily={'monospace'}>
+            {hours}:{minutes}
+          </Typography>
+          <Typography fontWeight={'light'} fontSize={'1.75rem'} fontFamily={'monospace'} color={'#888888'}>
+            {seconds}
+          </Typography>
+          <Typography fontFamily={'monospace'} fontSize={'2rem'} color={'#888888'} marginLeft={1}>
+            {!format24 && ampm}
+          </Typography>
         </Box>
-        {!format24 && <Box sx={{ fontSize: '1.5rem', color: '#888888' }}>{ampm}</Box>}
       </Box>
     </Widget>
   );
