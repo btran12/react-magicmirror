@@ -1,5 +1,6 @@
 {
   "name": "react-magicmirror",
+  "homepage": "react-magicmirror",
   "private": true,
   "version": "0.0.0",
   "type": "module",
