@@ -38,7 +38,7 @@ export const Dashboard = () => {
     } else if (widgetType === 'news') {
       return <WidgetComponent apiKey={settings.newsApiKey} />;
     } else if (widgetType === 'calendar') {
-      return <WidgetComponent apiKey={settings.googleCalendarApiKey} clientId={settings.googleCalendarClientId} />;
+      return <WidgetComponent icsUrl={settings.icsUrl} />;
     } else {
       return <WidgetComponent />;
     }

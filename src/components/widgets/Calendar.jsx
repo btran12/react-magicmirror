@@ -3,7 +3,6 @@ import {
   Box,
   Typography,
   IconButton,
-  Button,
   CircularProgress,
   Divider,
 } from '@mui/material';
@@ -16,8 +15,7 @@ const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
-const GOOGLE_CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar.readonly';
-const GIS_SCRIPT_ID = 'google-identity-services';
+const REFRESH_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
 
 const buildCalendarDays = (year, month) => {
   const firstDay = new Date(year, month, 1).getDay();
@@ -28,13 +26,78 @@ const buildCalendarDays = (year, month) => {
   return days;
 };
 
-export const Calendar = ({ apiKey, clientId }) => {
+// Parse a bare iCal date/datetime value string into a Date.
+// Supports: YYYYMMDD, YYYYMMDDTHHmmSS, YYYYMMDDTHHmmSSZ
+const parseIcsDate = (value) => {
+  if (!value || value.length < 8) return null;
+  const y = parseInt(value.slice(0, 4), 10);
+  const mo = parseInt(value.slice(4, 6), 10) - 1;
+  const d = parseInt(value.slice(6, 8), 10);
+  if (value.length === 8) {
+    // Date-only (all-day)
+    return new Date(y, mo, d);
+  }
+  // Date-time
+  const h = parseInt(value.slice(9, 11), 10);
+  const mi = parseInt(value.slice(11, 13), 10);
+  const s = parseInt(value.slice(13, 15), 10);
+  return value.endsWith('Z')
+    ? new Date(Date.UTC(y, mo, d, h, mi, s))
+    : new Date(y, mo, d, h, mi, s);
+};
+
+// Parse iCalendar text into a list of event objects with id, summary, start, end, isAllDay.
+const parseIcs = (text) => {
+  // Unfold continuation lines (CRLF or LF followed by a space/tab)
+  const unfolded = text.replace(/\r\n([ \t])/g, '$1').replace(/\n([ \t])/g, '$1');
+  const lines = unfolded.split(/\r?\n/);
+
+  const events = [];
+  let inEvent = false;
+  let current = {};
+
+  for (const line of lines) {
+    if (line === 'BEGIN:VEVENT') {
+      inEvent = true;
+      current = {};
+    } else if (line === 'END:VEVENT') {
+      if (current.summary && current.start && !isNaN(current.start)) {
+        events.push(current);
+      }
+      inEvent = false;
+    } else if (inEvent) {
+      const colonIdx = line.indexOf(':');
+      if (colonIdx === -1) continue;
+      // Key may contain parameters, e.g. DTSTART;TZID=America/New_York
+      const keyPart = line.slice(0, colonIdx).toUpperCase();
+      const value = line.slice(colonIdx + 1).trim();
+      const key = keyPart.split(';')[0];
+
+      if (key === 'SUMMARY') {
+        current.summary = value
+          .replace(/\\n/g, ' ')
+          .replace(/\\,/g, ',')
+          .replace(/\\;/g, ';')
+          .replace(/\\\\/g, '\\');
+      } else if (key === 'UID') {
+        current.id = value;
+      } else if (key === 'DTSTART') {
+        current.isAllDay = !value.includes('T');
+        current.start = parseIcsDate(value);
+      } else if (key === 'DTEND') {
+        current.end = parseIcsDate(value);
+      }
+    }
+  }
+
+  return events;
+};
+
+export const Calendar = ({ icsUrl }) => {
   const today = new Date();
   const [viewDate, setViewDate] = useState(
     new Date(today.getFullYear(), today.getMonth(), 1)
   );
-  const [tokenClient, setTokenClient] = useState(null);
-  const [accessToken, setAccessToken] = useState(null);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -43,83 +106,43 @@ export const Calendar = ({ apiKey, clientId }) => {
   const month = viewDate.getMonth();
   const days = buildCalendarDays(year, month);
 
-  // Load Google Identity Services and initialize token client
-  useEffect(() => {
-    if (!clientId) {
-      setTokenClient(null);
-      setAccessToken(null);
+  const fetchEvents = useCallback(async () => {
+    if (!icsUrl) {
       setEvents([]);
       return;
     }
-
-    const initTokenClient = () => {
-      const client = window.google.accounts.oauth2.initTokenClient({
-        client_id: clientId,
-        scope: GOOGLE_CALENDAR_SCOPE,
-        callback: (response) => {
-          if (response.access_token) {
-            setAccessToken(response.access_token);
-            setError(null);
-          } else if (response.error) {
-            setError('Sign-in failed: ' + response.error);
-          }
-        },
-      });
-      setTokenClient(client);
-    };
-
-    if (window.google?.accounts?.oauth2) {
-      initTokenClient();
-      return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(icsUrl);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const text = await res.text();
+      const parsed = parseIcs(text);
+      // Keep only future/ongoing events, sorted by start
+      const now = Date.now();
+      const upcoming = parsed
+        .filter((e) => {
+          // For all-day events without an explicit end, treat as ending at midnight the next day
+          const end = e.end ?? (e.isAllDay
+            ? new Date(e.start.getFullYear(), e.start.getMonth(), e.start.getDate() + 1)
+            : e.start);
+          return end.getTime() >= now;
+        })
+        .sort((a, b) => a.start - b.start);
+      setEvents(upcoming);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
     }
+  }, [icsUrl]);
 
-    if (!document.getElementById(GIS_SCRIPT_ID)) {
-      const script = document.createElement('script');
-      script.id = GIS_SCRIPT_ID;
-      script.src = 'https://accounts.google.com/gsi/client';
-      script.async = true;
-      script.onload = initTokenClient;
-      document.head.appendChild(script);
-    }
-  }, [clientId]);
-
-  const fetchEvents = useCallback(
-    async (token) => {
-      if (!token || !apiKey) return;
-      setLoading(true);
-      setError(null);
-      try {
-        const now = new Date().toISOString();
-        const later = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-        const url =
-          `https://www.googleapis.com/calendar/v3/calendars/primary/events` +
-          `?timeMin=${encodeURIComponent(now)}&timeMax=${encodeURIComponent(later)}` +
-          `&orderBy=startTime&singleEvents=true&maxResults=10&key=${apiKey}`;
-        const res = await fetch(url, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          throw new Error(errData?.error?.message || `HTTP ${res.status}`);
-        }
-        const data = await res.json();
-        setEvents(data.items || []);
-      } catch (e) {
-        setError(e.message);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [apiKey]
-  );
-
+  // Fetch on mount / URL change, then refresh on interval
   useEffect(() => {
-    if (accessToken) fetchEvents(accessToken);
-  }, [accessToken, fetchEvents]);
-
-  const handleConnect = () => {
-    if (tokenClient) tokenClient.requestAccessToken();
-  };
+    fetchEvents();
+    const id = setInterval(fetchEvents, REFRESH_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [fetchEvents]);
 
   const isToday = (day) =>
     day === today.getDate() &&
@@ -128,26 +151,23 @@ export const Calendar = ({ apiKey, clientId }) => {
 
   const eventDatesInView = new Set(
     events
-      .map((e) => {
-        const raw = e.start?.dateTime || e.start?.date;
-        return raw ? new Date(raw) : null;
-      })
-      .filter((d) => d && !isNaN(d) && d.getFullYear() === year && d.getMonth() === month)
-      .map((d) => d.getDate())
+      .filter((e) => e.start.getFullYear() === year && e.start.getMonth() === month)
+      .map((e) => e.start.getDate())
   );
 
   const formatEventDate = (event) => {
-    const raw = event.start?.dateTime || event.start?.date;
-    if (!raw) return '';
-    const d = new Date(raw);
-    return isNaN(d) ? '' : d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+    if (!event.start || isNaN(event.start)) return '';
+    return event.start.toLocaleDateString(navigator.language, { weekday: 'short', month: 'short', day: 'numeric' });
   };
 
   const formatEventTime = (event) => {
-    if (!event.start?.dateTime) return 'All day';
-    const d = new Date(event.start.dateTime);
-    return isNaN(d) ? '' : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (event.isAllDay) return 'All day';
+    if (!event.start || isNaN(event.start)) return '';
+    return event.start.toLocaleTimeString(navigator.language, { hour: '2-digit', minute: '2-digit' });
   };
+
+  // Show the next 5 upcoming events
+  const upcomingEvents = events.slice(0, 5);
 
   return (
     <Widget title="Calendar" widgetType="calendar">
@@ -233,27 +253,11 @@ export const Calendar = ({ apiKey, clientId }) => {
 
       <Divider sx={{ borderColor: '#333333', my: 1.5 }} />
 
-      {/* Google Calendar section */}
-      {!clientId ? (
+      {/* Upcoming events section */}
+      {!icsUrl ? (
         <Typography sx={{ fontSize: '0.75rem', color: '#666666', textAlign: 'center' }}>
-          Add a Google Client ID in settings to connect your calendar
+          Add a calendar ICS URL in settings to show events
         </Typography>
-      ) : !accessToken ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-          <Button
-            size="small"
-            onClick={handleConnect}
-            disabled={!tokenClient}
-            sx={{
-              color: '#90caf9',
-              fontSize: '0.75rem',
-              textTransform: 'none',
-              '&:hover': { bgcolor: 'rgba(144, 202, 249, 0.08)' },
-            }}
-          >
-            Connect Google Calendar
-          </Button>
-        </Box>
       ) : loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
           <CircularProgress size={18} sx={{ color: '#90caf9' }} />
@@ -262,9 +266,9 @@ export const Calendar = ({ apiKey, clientId }) => {
         <Typography sx={{ fontSize: '0.7rem', color: '#f44336', textAlign: 'center' }}>
           {error}
         </Typography>
-      ) : events.length === 0 ? (
+      ) : upcomingEvents.length === 0 ? (
         <Typography sx={{ fontSize: '0.75rem', color: '#666666', textAlign: 'center' }}>
-          No upcoming events in the next 7 days
+          No upcoming events
         </Typography>
       ) : (
         <Box>
@@ -280,8 +284,8 @@ export const Calendar = ({ apiKey, clientId }) => {
           >
             Upcoming
           </Typography>
-          {events.slice(0, 5).map((event) => (
-            <Box key={event.id} sx={{ mb: 1 }}>
+          {upcomingEvents.map((event, i) => (
+            <Box key={event.id || i} sx={{ mb: 1 }}>
               <Typography
                 sx={{ fontSize: '0.75rem', color: '#ffffff', fontWeight: 500, lineHeight: 1.3 }}
               >

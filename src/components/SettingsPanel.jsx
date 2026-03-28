@@ -431,31 +431,11 @@ export const SettingsPanel = ({ isOpen, onClose }) => {
                     <Stack spacing={2}>
                       <TextField
                         fullWidth
-                        label="Google Calendar API Key"
-                        type="password"
-                        value={localSettings.googleCalendarApiKey}
-                        onChange={(e) => handleSettingChange('googleCalendarApiKey', e.target.value)}
-                        placeholder="Enter your Google API key"
-                        variant="outlined"
-                        sx={{
-                          '& .MuiOutlinedInput-root': {
-                            color: '#ffffff',
-                            '& fieldset': { borderColor: '#444444' },
-                            '&:hover fieldset': { borderColor: '#555555' },
-                            '&.Mui-focused fieldset': { borderColor: '#2196f3' }
-                          },
-                          '& .MuiInputBase-input::placeholder': { color: '#888888', opacity: 1 },
-                          '& .MuiInputLabel-root': { color: '#cccccc' },
-                        }}
-                      />
-
-                      <TextField
-                        fullWidth
-                        label="Google OAuth Client ID"
-                        type="password"
-                        value={localSettings.googleCalendarClientId}
-                        onChange={(e) => handleSettingChange('googleCalendarClientId', e.target.value)}
-                        placeholder="Enter your OAuth Client ID"
+                        label="Calendar ICS URL"
+                        type="text"
+                        value={localSettings.icsUrl}
+                        onChange={(e) => handleSettingChange('icsUrl', e.target.value)}
+                        placeholder="https://calendar.google.com/calendar/ical/.../basic.ics"
                         variant="outlined"
                         sx={{
                           '& .MuiOutlinedInput-root': {
