@@ -177,7 +177,7 @@ export const Weather = ({ apiKey, location }) => {
               {React.cloneElement(getWeatherIcon(weather.weather[0].main), { sx: { fontSize: 50 } })}
             </Box>
             <Box>
-              <Typography sx={{ fontSize: '3rem', fontWeight: 'light', color: '#ffffff', lineHeight: 1 }}>
+              <Typography sx={{ fontSize: 'clamp(1.75rem, 2.8vw, 3rem)', fontWeight: 'light', color: '#ffffff', lineHeight: 1 }}>
                 {Math.round(weather.main.temp)}°
               </Typography>
               <Typography sx={{ fontSize: '0.875rem', color: '#888888' }}>
