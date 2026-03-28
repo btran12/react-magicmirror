@@ -37,6 +37,8 @@ export const Dashboard = () => {
       return <WidgetComponent apiKey={settings.openweatherApiKey} location={settings.location} />;
     } else if (widgetType === 'news') {
       return <WidgetComponent apiKey={settings.newsApiKey} />;
+    } else if (widgetType === 'calendar') {
+      return <WidgetComponent apiKey={settings.googleCalendarApiKey} clientId={settings.googleCalendarClientId} />;
     } else {
       return <WidgetComponent />;
     }
