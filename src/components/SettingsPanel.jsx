@@ -46,6 +46,7 @@ const WIDGET_OPTIONS = [
   { value: 'weather', label: 'Weather' },
   { value: 'calendar', label: 'Calendar' },
   { value: 'news', label: 'News' },
+  { value: 'compliments', label: 'Compliments' },
 ];
 
 const GRID_LAYOUT = [
@@ -56,9 +57,10 @@ const GRID_LAYOUT = [
 
 export const SettingsPanel = ({ isOpen, onClose }) => {
   const { settings, updateSettings, layout, updateLayout, fadeSettings, updateFadeSettings } = useContext(WidgetContext);
+  const defaultFadeSettings = { clock: true, weather: true, calendar: true, news: true, compliments: true };
   const [localSettings, setLocalSettings] = useState(settings);
   const [localLayout, setLocalLayout] = useState(layout.widgets);
-  const [localFadeSettings, setLocalFadeSettings] = useState(fadeSettings || { clock: true, weather: true, calendar: true, news: true });
+  const [localFadeSettings, setLocalFadeSettings] = useState({ ...defaultFadeSettings, ...(fadeSettings || {}) });
   const [citySuggestions, setCitySuggestions] = useState([]);
   const [cityLoading, setCityLoading] = useState(false);
   const debounceTimerRef = useRef(null);
@@ -404,6 +406,59 @@ export const SettingsPanel = ({ isOpen, onClose }) => {
                             <Switch
                               checked={localFadeSettings.news}
                               onChange={() => handleFadeToggle('news')}
+                              sx={{
+                                '& .MuiSwitch-switchBase.Mui-checked': {
+                                  color: '#2196f3',
+                                  '&:hover': { bgcolor: 'rgba(33, 150, 243, 0.08)' }
+                                },
+                                '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                                  bgcolor: 'rgba(33, 150, 243, 0.3)'
+                                },
+                                '& .MuiSwitch-track': {
+                                  bgcolor: '#444444'
+                                }
+                              }}
+                            />
+                          }
+                          label="Show Fade Effect"
+                          sx={{ color: '#ffffff' }}
+                        />
+                      )}
+                    </Stack>
+                  </Box>
+
+                  {/* Compliments Settings Section */}
+                  <Box>
+                    <Typography sx={{ color: '#aaaaaa', fontWeight: 'bold', mb: 2, fontSize: '0.875rem' }}>Compliments</Typography>
+                    <Stack spacing={2}>
+                      <TextField
+                        fullWidth
+                        label="Compliments JSON URL"
+                        type="text"
+                        value={localSettings.complimentsConfigUrl || ''}
+                        onChange={(e) => handleSettingChange('complimentsConfigUrl', e.target.value)}
+                        placeholder="Optional. Leave empty to use /compliments.json"
+                        helperText="Expected format: { fallback: [], timeOfDay: { morning: [] }, weather: { clear: [] } }"
+                        variant="outlined"
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            color: '#ffffff',
+                            '& fieldset': { borderColor: '#444444' },
+                            '&:hover fieldset': { borderColor: '#555555' },
+                            '&.Mui-focused fieldset': { borderColor: '#2196f3' }
+                          },
+                          '& .MuiInputBase-input::placeholder': { color: '#888888', opacity: 1 },
+                          '& .MuiInputLabel-root': { color: '#cccccc' },
+                          '& .MuiFormHelperText-root': { color: '#999999' },
+                        }}
+                      />
+
+                      {localFadeSettings && (
+                        <FormControlLabel
+                          control={
+                            <Switch
+                              checked={localFadeSettings.compliments}
+                              onChange={() => handleFadeToggle('compliments')}
                               sx={{
                                 '& .MuiSwitch-switchBase.Mui-checked': {
                                   color: '#2196f3',

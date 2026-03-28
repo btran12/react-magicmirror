@@ -8,6 +8,7 @@ export const WidgetProvider = ({ children }) => {
     { id: 2, type: 'weather', title: 'Weather', size: 'large' },
     { id: 3, type: 'calendar', title: 'Calendar', size: 'medium' },
     { id: 4, type: 'news', title: 'News', size: 'large' },
+    { id: 5, type: 'compliments', title: 'Compliments', size: 'medium' },
   ]);
 
   const [settings, setSettings] = useState({
@@ -17,15 +18,21 @@ export const WidgetProvider = ({ children }) => {
     tempUnit: localStorage.getItem('tempUnit') || 'F',
     clockFormat: localStorage.getItem('clockFormat') || '24h',
     icsUrl: localStorage.getItem('icsUrl') || '',
+    complimentsConfigUrl: localStorage.getItem('complimentsConfigUrl') || '',
   });
 
   const [fadeSettings, setFadeSettings] = useState(() => {
+    const defaultFadeSettings = { clock: false, weather: true, calendar: false, news: false, compliments: false };
+
     try {
       const stored = localStorage.getItem('fadeSettings');
-      return stored ? JSON.parse(stored) : { clock: false, weather: true, calendar: false, news: false };
+      if (!stored) return defaultFadeSettings;
+
+      const parsed = JSON.parse(stored);
+      return { ...defaultFadeSettings, ...parsed };
     } catch (e) {
       console.error('Error parsing fadeSettings from localStorage:', e);
-      return { clock: false, weather: true, calendar: false, news: false };
+      return defaultFadeSettings;
     }
   });
 
@@ -34,7 +41,7 @@ export const WidgetProvider = ({ children }) => {
       const stored = localStorage.getItem('layout');
       const defaultLayout = [
         'clock',     // position 0 - Row 1, Column 1
-        null,        // position 1 - Row 1, Column 2
+        'compliments', // position 1 - Row 1, Column 2
         'weather',   // position 2 - Row 1, Column 3
         null,        // position 3 - Row 2, Column 1
         null,        // position 4 - Row 2, Column 2
@@ -51,7 +58,7 @@ export const WidgetProvider = ({ children }) => {
       return {
         widgets: [
           'clock',     // position 0 - Row 1, Column 1
-          null,        // position 1 - Row 1, Column 2
+          'compliments', // position 1 - Row 1, Column 2
           'weather',   // position 2 - Row 1, Column 3
           null,        // position 3 - Row 2, Column 1
           null,        // position 4 - Row 2, Column 2

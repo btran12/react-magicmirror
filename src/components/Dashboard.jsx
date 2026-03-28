@@ -5,6 +5,7 @@ import { Clock } from './widgets/Clock';
 import { Weather } from './widgets/Weather';
 import { Calendar } from './widgets/Calendar';
 import { News } from './widgets/News';
+import { Compliments } from './widgets/Compliments';
 import { Notifications } from './Notifications';
 import { SettingsPanel } from './SettingsPanel';
 import { WidgetContext } from '../context/WidgetContext';
@@ -20,6 +21,7 @@ const WIDGET_COMPONENTS = {
   weather: Weather,
   calendar: Calendar,
   news: News,
+  compliments: Compliments,
 };
 
 export const Dashboard = () => {
@@ -37,6 +39,14 @@ export const Dashboard = () => {
       return <WidgetComponent apiKey={settings.openweatherApiKey} location={settings.location} />;
     } else if (widgetType === 'news') {
       return <WidgetComponent apiKey={settings.newsApiKey} />;
+    } else if (widgetType === 'compliments') {
+      return (
+        <WidgetComponent
+          configUrl={settings.complimentsConfigUrl}
+          weatherApiKey={settings.openweatherApiKey}
+          location={settings.location}
+        />
+      );
     } else if (widgetType === 'calendar') {
       return <WidgetComponent icsUrl={settings.icsUrl} />;
     } else {
