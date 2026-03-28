@@ -13,8 +13,8 @@ export const Widget = ({ title, widgetType, children, className = '' }) => {
   }, []);
 
   return (
-    <Box sx={{ position: 'relative', overflow: 'hidden', opacity: isLoaded ? 1 : 0, transition: 'opacity 1s ease-in-out' }}>
-      <Box sx={{ color: '#ffffff', margin: 2}}>
+    <Box sx={{ position: 'relative', overflow: 'hidden', height: '100%', opacity: isLoaded ? 1 : 0, transition: 'opacity 1s ease-in-out' }}>
+      <Box sx={{ color: '#ffffff', padding: 2, height: '100%', boxSizing: 'border-box', overflow: 'hidden' }}>
         {children}
       </Box>
       {/* Fade overlay at bottom - configurable per widget */}

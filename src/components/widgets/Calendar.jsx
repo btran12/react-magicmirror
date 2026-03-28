@@ -219,7 +219,7 @@ export const Calendar = ({ icsUrl }) => {
               py: 0.5,
               borderRadius: 1,
               backgroundColor: isToday(day) ? '#1976d2' : 'transparent',
-              minHeight: 28,
+              minHeight: 24,
             }}
           >
             {day !== null && (

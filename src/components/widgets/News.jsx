@@ -99,7 +99,7 @@ export const News = ({ apiKey }) => {
           {/* Headline */}
           <Typography
             sx={{
-              fontSize: '2rem',
+              fontSize: 'clamp(1.2rem, 1.8vw, 2rem)',
               fontWeight: 'light',
               color: '#ffffff',
               lineHeight: 1.2,

@@ -71,15 +71,16 @@ export const Dashboard = () => {
       </Button>
 
       {/* Main Content Area - Full viewport without scrolling */}
-      <Box sx={{ flex: 1, overflow: 'hidden', p: 3 }}>
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(12, 1fr)' }, gap: 3, height: '100%' }}>
+      <Box sx={{ flex: 1, overflow: 'hidden', p: 2 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(12, 1fr)' }, gridTemplateRows: '2fr 2fr 1fr', gap: 2, height: '100%' }}>
           {GRID_ROWS.map((row) =>
             row.positions.map((position, index) => (
               <Box
                 key={position}
                 sx={{
                   gridColumn: { xs: '1', md: `span ${row.colSpans[index]}` },
-                  minHeight: '300px',
+                  minHeight: 0,
+                  height: '100%',
                   overflow: 'hidden',
                 }}
               >
