@@ -13,18 +13,18 @@ export const WidgetProvider = ({ children }) => {
   const [settings, setSettings] = useState({
     openweatherApiKey: localStorage.getItem('openweatherApiKey') || '',
     newsApiKey: localStorage.getItem('newsApiKey') || '',
-    location: localStorage.getItem('location') || 'New York',
-    tempUnit: localStorage.getItem('tempUnit') || 'C',
+    location: localStorage.getItem('location') || 'New York, New York',
+    tempUnit: localStorage.getItem('tempUnit') || 'F',
     clockFormat: localStorage.getItem('clockFormat') || '24h',
   });
 
   const [fadeSettings, setFadeSettings] = useState(() => {
     try {
       const stored = localStorage.getItem('fadeSettings');
-      return stored ? JSON.parse(stored) : { clock: true, weather: true, calendar: true, news: true };
+      return stored ? JSON.parse(stored) : { clock: false, weather: true, calendar: false, news: false };
     } catch (e) {
       console.error('Error parsing fadeSettings from localStorage:', e);
-      return { clock: true, weather: true, calendar: true, news: true };
+      return { clock: false, weather: true, calendar: false, news: false };
     }
   });
 
@@ -32,13 +32,13 @@ export const WidgetProvider = ({ children }) => {
     try {
       const stored = localStorage.getItem('layout');
       const defaultLayout = [
-        'clock',     // position 0
-        'weather',   // position 1
-        'calendar',  // position 2
-        null,        // position 3
-        null,        // position 4
-        null,        // position 5
-        null,        // position 6
+        'clock',     // position 0 - Row 1, Column 1
+        null,        // position 1 - Row 1, Column 2
+        'weather',   // position 2 - Row 1, Column 3
+        null,        // position 3 - Row 2, Column 1
+        null,        // position 4 - Row 2, Column 2
+        null,        // position 5 - Row 2, Column 3
+        'news',      // position 6 - Row 3
         null,        // position 7
         null,        // position 8
       ];
@@ -49,13 +49,13 @@ export const WidgetProvider = ({ children }) => {
       console.error('Error parsing layout from localStorage:', e);
       return {
         widgets: [
-          'clock',     // position 0
-          'weather',   // position 1
-          'calendar',  // position 2
-          null,        // position 3
-          null,        // position 4
-          null,        // position 5
-          null,        // position 6
+          'clock',     // position 0 - Row 1, Column 1
+          null,        // position 1 - Row 1, Column 2
+          'weather',   // position 2 - Row 1, Column 3
+          null,        // position 3 - Row 2, Column 1
+          null,        // position 4 - Row 2, Column 2
+          null,        // position 5 - Row 2, Column 3
+          'news',      // position 6 - Row 3
           null,        // position 7
           null,        // position 8
         ]
