@@ -50,7 +50,7 @@ const resolveConfigUrl = (value) => {
   return trimmed;
 };
 
-export const Compliments = ({ configUrl, weatherApiKey, location }) => {
+export const Compliments = ({ configUrl, weatherApiKey, location, showFade = false }) => {
   const [config, setConfig] = useState(EMPTY_CONFIG);
   const [weatherCondition, setWeatherCondition] = useState('default');
   const [loading, setLoading] = useState(true);
@@ -164,7 +164,7 @@ export const Compliments = ({ configUrl, weatherApiKey, location }) => {
   const activeMessage = messages[currentIndex] || messages[0];
 
   return (
-    <Widget widgetType="compliments">
+    <Widget widgetType="compliments" showFade={showFade}>
       <Stack sx={{ height: '100%', justifyContent: 'center', textAlign: 'center' }} spacing={2}>
 
         <Typography

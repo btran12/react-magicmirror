@@ -1,21 +1,16 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { Box, Button, Typography } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Box, Typography } from '@mui/material';
 import { Widget } from '../Widget';
-import { WidgetContext } from '../../context/WidgetContext';
 
-export const Clock = () => {
-  const { settings } = useContext(WidgetContext);
+export const Clock = ({ clockFormat = '24h', showFade = false }) => {
   const [time, setTime] = useState(new Date());
-  const [format24, setFormat24] = useState(settings.clockFormat === '24h');
-
-  useEffect(() => {
-    setFormat24(settings.clockFormat === '24h');
-  }, [settings.clockFormat]);
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  const format24 = clockFormat === '24h';
 
   const hours = format24
     ? time.getHours().toString().padStart(2, '0')
@@ -33,7 +28,7 @@ export const Clock = () => {
   });
 
   return (
-    <Widget widgetType="clock">
+    <Widget widgetType="clock" showFade={showFade}>
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start'}}>
         {/* Date */}
         <Typography fontWeight={'light'} fontSize={'clamp(1rem, 1.5vw, 1.75rem)'} fontFamily={'monospace'} color={'#888888'}>

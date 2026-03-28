@@ -1,19 +1,9 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React from 'react';
 import { Box } from '@mui/material';
-import { WidgetContext } from '../context/WidgetContext';
 
-export const Widget = ({ title, widgetType, children, className = '' }) => {
-  const { fadeSettings } = useContext(WidgetContext);
-  const showFade = widgetType && fadeSettings && fadeSettings[widgetType];
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  useEffect(() => {
-    // Trigger fade-in animation on mount
-    setIsLoaded(true);
-  }, []);
-
+export const Widget = ({ widgetType, children, showFade = false }) => {
   return (
-    <Box sx={{ position: 'relative', overflow: 'hidden', height: '100%', opacity: isLoaded ? 1 : 0, transition: 'opacity 1s ease-in-out' }}>
+    <Box sx={{ position: 'relative', overflow: 'hidden', height: '100%' }}>
       <Box sx={{ color: '#ffffff', padding: 2, height: '100%', boxSizing: 'border-box', overflow: 'hidden' }}>
         {children}
       </Box>

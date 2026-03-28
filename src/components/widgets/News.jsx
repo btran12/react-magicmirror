@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, Typography } from '@mui/material';
 import { Widget } from '../Widget';
 
-export const News = ({ apiKey }) => {
+export const News = ({ apiKey, showFade = false }) => {
   const [articles, setArticles] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -67,7 +67,7 @@ export const News = ({ apiKey }) => {
   const currentArticle = articles[currentIndex];
 
   return (
-    <Widget title="Top Headlines" widgetType="news">
+    <Widget title="Top Headlines" widgetType="news" showFade={showFade}>
       {loading && (
         <Typography sx={{ color: '#888888' }}>Loading news...</Typography>
       )}

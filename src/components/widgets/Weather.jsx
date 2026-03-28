@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Stack, Typography } from '@mui/material';
 import { Widget } from '../Widget';
-import { WidgetContext } from '../../context/WidgetContext';
 import WbSunnyOutlinedIcon from '@mui/icons-material/WbSunnyOutlined';
 import CloudOutlinedIcon from '@mui/icons-material/CloudOutlined';
 import WaterDropOutlinedIcon from '@mui/icons-material/WaterDropOutlined';
@@ -12,8 +11,7 @@ import AirOutlinedIcon from '@mui/icons-material/AirOutlined';
 import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined';
 import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined';
 
-export const Weather = ({ apiKey, location }) => {
-  const { settings } = useContext(WidgetContext);
+export const Weather = ({ apiKey, location, tempUnit = 'F', clockFormat = '24h', showFade = true }) => {
   const [weather, setWeather] = useState(null);
   const [forecast, setForecast] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -33,7 +31,7 @@ export const Weather = ({ apiKey, location }) => {
           'C': 'metric',
           'F': 'imperial',
         };
-        const units = unitsMap[settings.tempUnit] || 'metric';
+        const units = unitsMap[tempUnit] || 'metric';
         
         // Fetch current weather
         const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${location}&appid=${apiKey}&units=${units}`;
@@ -68,7 +66,7 @@ export const Weather = ({ apiKey, location }) => {
     fetchWeather();
     const interval = setInterval(fetchWeather, 10 * 60 * 1000);
     return () => clearInterval(interval);
-  }, [apiKey, location, settings]);
+  }, [apiKey, location, tempUnit]);
 
   const getWeatherIcon = (weatherMain) => {
     const iconProps = { sx: { fontSize: 40 } };
@@ -107,10 +105,10 @@ export const Weather = ({ apiKey, location }) => {
     
     // Show sunset if after sunset time, otherwise show sunrise
     if (now > sunset) {
-      const time = sunrise.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: settings.clockFormat === '12h' });
+      const time = sunrise.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: clockFormat === '12h' });
       return { type: 'sunrise', time, icon: <LightModeOutlinedIcon /> };
     } else {
-      const time = sunset.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: settings.clockFormat === '12h' });
+      const time = sunset.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: clockFormat === '12h' });
       return { type: 'sunset', time, icon: <DarkModeOutlinedIcon /> };
     }
   };
@@ -150,7 +148,7 @@ export const Weather = ({ apiKey, location }) => {
   };
 
   return (
-    <Widget widgetType="weather">
+    <Widget widgetType="weather" showFade={showFade}>
       {loading && <Typography sx={{ color: '#ffffff' }}>Loading weather...</Typography>}
       {error && <Typography sx={{ color: '#ff6b6b' }}>{error}</Typography>}
       {weather && (

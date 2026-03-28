@@ -26,29 +26,42 @@ const WIDGET_COMPONENTS = {
 
 export const Dashboard = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const { settings, layout } = useContext(WidgetContext);
+  const { layout, getWidgetSettingsForPosition } = useContext(WidgetContext);
   const widgets = layout.widgets;
 
-  const renderWidget = (widgetType) => {
+  const renderWidget = (position, widgetType) => {
     if (!widgetType) return null;
 
     const WidgetComponent = WIDGET_COMPONENTS[widgetType];
     if (!WidgetComponent) return null;
 
+    const widgetSettings = getWidgetSettingsForPosition(position, widgetType) || {};
+
     if (widgetType === 'weather') {
-      return <WidgetComponent apiKey={settings.openweatherApiKey} location={settings.location} />;
+      return (
+        <WidgetComponent
+          apiKey={widgetSettings.openweatherApiKey}
+          location={widgetSettings.location}
+          tempUnit={widgetSettings.tempUnit}
+          clockFormat={widgetSettings.clockFormat}
+          showFade={widgetSettings.showFade}
+        />
+      );
     } else if (widgetType === 'news') {
-      return <WidgetComponent apiKey={settings.newsApiKey} />;
+      return <WidgetComponent apiKey={widgetSettings.newsApiKey} showFade={widgetSettings.showFade} />;
     } else if (widgetType === 'compliments') {
       return (
         <WidgetComponent
-          configUrl={settings.complimentsConfigUrl}
-          weatherApiKey={settings.openweatherApiKey}
-          location={settings.location}
+          configUrl={widgetSettings.complimentsConfigUrl}
+          weatherApiKey={widgetSettings.openweatherApiKey}
+          location={widgetSettings.location}
+          showFade={widgetSettings.showFade}
         />
       );
     } else if (widgetType === 'calendar') {
-      return <WidgetComponent icsUrl={settings.icsUrl} />;
+      return <WidgetComponent icsUrl={widgetSettings.icsUrl} showFade={widgetSettings.showFade} />;
+    } else if (widgetType === 'clock') {
+      return <WidgetComponent clockFormat={widgetSettings.clockFormat} showFade={widgetSettings.showFade} />;
     } else {
       return <WidgetComponent />;
     }
@@ -94,7 +107,7 @@ export const Dashboard = () => {
                   overflow: 'hidden',
                 }}
               >
-                {renderWidget(widgets[position])}
+                {renderWidget(position, widgets[position])}
               </Box>
             ))
           )}

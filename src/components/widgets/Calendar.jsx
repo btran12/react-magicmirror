@@ -93,7 +93,7 @@ const parseIcs = (text) => {
   return events;
 };
 
-export const Calendar = ({ icsUrl }) => {
+export const Calendar = ({ icsUrl, showFade = false }) => {
   const today = new Date();
   const [viewDate, setViewDate] = useState(
     new Date(today.getFullYear(), today.getMonth(), 1)
@@ -170,7 +170,7 @@ export const Calendar = ({ icsUrl }) => {
   const upcomingEvents = events.slice(0, 5);
 
   return (
-    <Widget title="Calendar" widgetType="calendar">
+    <Widget title="Calendar" widgetType="calendar" showFade={showFade}>
       {/* Month navigation */}
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
         <IconButton
