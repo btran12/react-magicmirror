@@ -51,6 +51,8 @@ const WIDGET_OPTIONS = [
   { value: 'news', label: 'News' },
   { value: 'compliments', label: 'Compliments' },
   { value: 'stocks', label: 'Stocks' },
+  { value: 'crypto', label: 'Crypto' },
+  { value: 'airquality', label: 'Air Quality' },
   { value: 'sports', label: 'Sports' },
 ];
 
@@ -61,6 +63,8 @@ const WIDGET_LABELS = {
   news: 'News',
   compliments: 'Compliments',
   stocks: 'Stocks',
+  crypto: 'Crypto',
+  airquality: 'Air Quality',
   sports: 'Sports',
 };
 
@@ -87,6 +91,8 @@ const DEFAULT_WIDGET_FADE = {
   news: false,
   compliments: false,
   stocks: false,
+  crypto: false,
+  airquality: false,
   sports: false,
 };
 
@@ -166,6 +172,19 @@ const createWidgetSettingsForType = (widgetType, defaults) => {
         stockTickers: [],
         showFade: DEFAULT_WIDGET_FADE.stocks,
       };
+    case 'crypto':
+      return {
+        widgetType,
+        cryptoCoins: ['bitcoin', 'ethereum'],
+        showFade: DEFAULT_WIDGET_FADE.crypto,
+      };
+    case 'airquality':
+      return {
+        widgetType,
+        openweatherApiKey: defaults.openweatherApiKey || '',
+        location: defaults.location || 'New York, New York',
+        showFade: DEFAULT_WIDGET_FADE.airquality,
+      };
     case 'sports':
       return {
         widgetType,
@@ -209,6 +228,11 @@ const buildSettingsDefaultsFromInstances = (layoutWidgets, widgetSettingsMap, pr
 
     if (widgetType === 'stocks' && instanceSettings.finnhubApiKey) {
       nextSettings.finnhubApiKey = instanceSettings.finnhubApiKey;
+    }
+
+    if (widgetType === 'airquality') {
+      nextSettings.openweatherApiKey = instanceSettings.openweatherApiKey || nextSettings.openweatherApiKey;
+      nextSettings.location = instanceSettings.location || nextSettings.location;
     }
 
     if (widgetType === 'compliments') {
@@ -713,6 +737,90 @@ export const SettingsPanel = ({ isOpen, onClose }) => {
           </Stack>
         );
       }
+      case 'crypto': {
+        const currentCoins = currentSettings.cryptoCoins || [];
+        return (
+          <Stack spacing={2}>
+            <Box>
+              <Typography sx={{ color: '#cccccc', fontSize: '0.85rem', mb: 1 }}>
+                Coins ({currentCoins.length}/10)
+              </Typography>
+              <Typography sx={{ color: '#888888', fontSize: '0.75rem', mb: 1 }}>
+                Enter CoinGecko IDs (e.g. bitcoin, ethereum, solana). No API key required.
+              </Typography>
+              <Stack spacing={1}>
+                {currentCoins.map((coin, idx) => (
+                  <Box key={idx} sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                    <TextField
+                      size="small"
+                      value={coin}
+                      onChange={(e) => {
+                        const next = [...currentCoins];
+                        next[idx] = e.target.value.toLowerCase();
+                        handleWidgetSettingChange(position, 'cryptoCoins', next);
+                      }}
+                      placeholder="e.g. bitcoin"
+                      variant="outlined"
+                      sx={{ flex: 1, ...fieldStyles }}
+                      inputProps={{ maxLength: 40 }}
+                    />
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        const next = currentCoins.filter((_, i) => i !== idx);
+                        handleWidgetSettingChange(position, 'cryptoCoins', next);
+                      }}
+                      sx={{ color: '#888888', '&:hover': { color: '#ff6b6b' } }}
+                    >
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
+                ))}
+                {currentCoins.length < 10 && (
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => {
+                      handleWidgetSettingChange(position, 'cryptoCoins', [...currentCoins, '']);
+                    }}
+                    sx={{
+                      color: '#2196f3',
+                      borderColor: '#2196f3',
+                      '&:hover': { borderColor: '#1976d2', bgcolor: 'rgba(33,150,243,0.08)' },
+                      textTransform: 'none',
+                      alignSelf: 'flex-start',
+                    }}
+                  >
+                    + Add Coin
+                  </Button>
+                )}
+              </Stack>
+            </Box>
+            {renderFadeToggle(position)}
+          </Stack>
+        );
+      }
+      case 'airquality':
+        return (
+          <Stack spacing={2}>
+            {renderLocationField(position)}
+            <TextField
+              fullWidth
+              label="OpenWeather API Key"
+              type="password"
+              value={currentSettings.openweatherApiKey || ''}
+              onChange={(e) => handleWidgetSettingChange(position, 'openweatherApiKey', e.target.value)}
+              placeholder="Enter your API key"
+              helperText="Required for air quality data (openweathermap.org/api)"
+              variant="outlined"
+              sx={{
+                ...fieldStyles,
+                '& .MuiFormHelperText-root': { color: '#999999' },
+              }}
+            />
+            {renderFadeToggle(position)}
+          </Stack>
+        );
       case 'sports': {
         const currentLeagues = currentSettings.sportsLeagues || [];
         const toggleLeague = (leagueKey) => {

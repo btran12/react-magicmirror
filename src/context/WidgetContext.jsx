@@ -21,6 +21,8 @@ const LEGACY_FADE_SETTINGS = {
   news: false,
   compliments: false,
   stocks: false,
+  crypto: false,
+  airquality: false,
   sports: false,
 };
 
@@ -105,6 +107,19 @@ const createWidgetSettingsForType = (widgetType, settings, fadeSettings) => {
         finnhubApiKey: settings.finnhubApiKey,
         stockTickers: [],
         showFade: fadeSettings.stocks,
+      };
+    case 'crypto':
+      return {
+        widgetType,
+        cryptoCoins: ['bitcoin', 'ethereum'],
+        showFade: fadeSettings.crypto,
+      };
+    case 'airquality':
+      return {
+        widgetType,
+        openweatherApiKey: settings.openweatherApiKey,
+        location: settings.location,
+        showFade: fadeSettings.airquality,
       };
     case 'sports':
       return {
