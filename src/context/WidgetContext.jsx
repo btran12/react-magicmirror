@@ -23,6 +23,7 @@ const LEGACY_FADE_SETTINGS = {
   stocks: false,
   crypto: false,
   airquality: false,
+  sports: false,
 };
 
 const getInitialSettings = () => ({
@@ -119,6 +120,13 @@ const createWidgetSettingsForType = (widgetType, settings, fadeSettings) => {
         openweatherApiKey: settings.openweatherApiKey,
         location: settings.location,
         showFade: fadeSettings.airquality,
+      };
+    case 'sports':
+      return {
+        widgetType,
+        sportsLeagues: [],
+        sportsTeams: '',
+        showFade: fadeSettings.sports,
       };
     default:
       return {

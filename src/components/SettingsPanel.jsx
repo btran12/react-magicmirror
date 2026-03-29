@@ -23,6 +23,7 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import { WidgetContext } from '../context/WidgetContext';
+import { SPORTS_LEAGUES } from './widgets/Sports';
 
 const FALLBACK_CITIES = [
   'New York, New York',
@@ -52,6 +53,7 @@ const WIDGET_OPTIONS = [
   { value: 'stocks', label: 'Stocks' },
   { value: 'crypto', label: 'Crypto' },
   { value: 'airquality', label: 'Air Quality' },
+  { value: 'sports', label: 'Sports' },
 ];
 
 const WIDGET_LABELS = {
@@ -63,6 +65,7 @@ const WIDGET_LABELS = {
   stocks: 'Stocks',
   crypto: 'Crypto',
   airquality: 'Air Quality',
+  sports: 'Sports',
 };
 
 const GRID_LAYOUT = [
@@ -90,6 +93,7 @@ const DEFAULT_WIDGET_FADE = {
   stocks: false,
   crypto: false,
   airquality: false,
+  sports: false,
 };
 
 const fieldStyles = {
@@ -180,6 +184,13 @@ const createWidgetSettingsForType = (widgetType, defaults) => {
         openweatherApiKey: defaults.openweatherApiKey || '',
         location: defaults.location || 'New York, New York',
         showFade: DEFAULT_WIDGET_FADE.airquality,
+      };
+    case 'sports':
+      return {
+        widgetType,
+        sportsLeagues: [],
+        sportsTeams: '',
+        showFade: DEFAULT_WIDGET_FADE.sports,
       };
     default:
       return {
@@ -810,6 +821,63 @@ export const SettingsPanel = ({ isOpen, onClose }) => {
             {renderFadeToggle(position)}
           </Stack>
         );
+      case 'sports': {
+        const currentLeagues = currentSettings.sportsLeagues || [];
+        const toggleLeague = (leagueKey) => {
+          const next = currentLeagues.includes(leagueKey)
+            ? currentLeagues.filter((l) => l !== leagueKey)
+            : [...currentLeagues, leagueKey];
+          handleWidgetSettingChange(position, 'sportsLeagues', next);
+        };
+        return (
+          <Stack spacing={2}>
+            <Box>
+              <Typography sx={{ color: '#cccccc', fontSize: '0.85rem', mb: 1 }}>
+                Leagues
+              </Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                {Object.entries(SPORTS_LEAGUES).map(([key, info]) => {
+                  const selected = currentLeagues.includes(key);
+                  return (
+                    <Button
+                      key={key}
+                      size="small"
+                      variant={selected ? 'contained' : 'outlined'}
+                      onClick={() => toggleLeague(key)}
+                      sx={{
+                        textTransform: 'none',
+                        fontSize: '0.75rem',
+                        px: 1.5,
+                        py: 0.5,
+                        ...(selected
+                          ? { bgcolor: '#2196f3', color: '#ffffff', '&:hover': { bgcolor: '#1976d2' } }
+                          : { color: '#aaaaaa', borderColor: '#444444', '&:hover': { borderColor: '#555555', bgcolor: 'rgba(255,255,255,0.05)' } }),
+                      }}
+                    >
+                      {info.name}
+                    </Button>
+                  );
+                })}
+              </Box>
+            </Box>
+            <TextField
+              fullWidth
+              label="Favorite Teams (optional)"
+              type="text"
+              value={currentSettings.sportsTeams || ''}
+              onChange={(e) => handleWidgetSettingChange(position, 'sportsTeams', e.target.value)}
+              placeholder="e.g. Lakers, Cowboys, Arsenal"
+              helperText="Comma-separated team names to filter games. Leave empty to show all games."
+              variant="outlined"
+              sx={{
+                ...fieldStyles,
+                '& .MuiFormHelperText-root': { color: '#999999' },
+              }}
+            />
+            {renderFadeToggle(position)}
+          </Stack>
+        );
+      }
       default:
         return null;
     }

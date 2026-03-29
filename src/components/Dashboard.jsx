@@ -9,6 +9,7 @@ import { Compliments } from './widgets/Compliments';
 import { Stocks } from './widgets/Stocks';
 import { Crypto } from './widgets/Crypto';
 import { AirQuality } from './widgets/AirQuality';
+import { Sports } from './widgets/Sports';
 import { Notifications } from './Notifications';
 import { SettingsPanel } from './SettingsPanel';
 import { WidgetContext } from '../context/WidgetContext';
@@ -28,6 +29,7 @@ const WIDGET_COMPONENTS = {
   stocks: Stocks,
   crypto: Crypto,
   airquality: AirQuality,
+  sports: Sports,
 };
 
 export const Dashboard = () => {
@@ -74,6 +76,14 @@ export const Dashboard = () => {
       return <WidgetComponent coins={widgetSettings.cryptoCoins || ['bitcoin', 'ethereum']} showFade={widgetSettings.showFade} />;
     } else if (widgetType === 'airquality') {
       return <WidgetComponent apiKey={widgetSettings.openweatherApiKey} location={widgetSettings.location} showFade={widgetSettings.showFade} />;
+    } else if (widgetType === 'sports') {
+      return (
+        <WidgetComponent
+          leagues={widgetSettings.sportsLeagues || []}
+          teams={widgetSettings.sportsTeams || ''}
+          showFade={widgetSettings.showFade}
+        />
+      );
     } else {
       return <WidgetComponent />;
     }
