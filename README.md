@@ -1,6 +1,6 @@
-# React MagicMirror
+# BlackDeck
 
-A modern, interactive dashboard application built with React and Vite that displays real-time information through customizable widgets. Inspired by the MagicMirror concept, this application provides a beautiful, dark-themed interface for monitoring weather, news, stocks, crypto, sports, air quality, and more.
+A modern, interactive dashboard application built with React and Vite that displays real-time information through customizable widgets. BlackDeck provides a sleek, dark-themed interface for monitoring weather, news, stocks, crypto, sports, air quality, Reddit highlights, and more.
 
 ## 🌟 Features
 
@@ -51,7 +51,7 @@ A modern, interactive dashboard application built with React and Vite that displ
 ```bash
 # Clone the repository
 git clone https://github.com/btran12/react-magicmirror.git
-cd react-magicmirror
+cd react-magicmirror  # or rename to blackdeck
 
 # Install dependencies
 npm install
@@ -107,7 +107,7 @@ The application requires API keys from various services. You can set them global
 ## 📁 Project Structure
 
 ```
-react-magicmirror/
+blackdeck/
 ├── src/
 │   ├── components/
 │   │   ├── Dashboard.jsx              # Main dashboard grid layout
@@ -331,7 +331,7 @@ netlify deploy --prod --dir=dist
 Update `vite.config.js`:
 ```javascript
 export default {
-  base: '/react-magicmirror/',
+  base: '/blackdeck/',
 }
 ```
 
@@ -353,7 +353,7 @@ This project is open source and available under the MIT License.
 
 ## 🙏 Acknowledgments
 
-- Inspired by [MagicMirror²](https://magicmirror.builders/)
+- Inspired by [MagicMirror²](https://magicmirror.builders/) — evolved into BlackDeck
 - Widget icons from Material-UI
 - API services: OpenWeatherMap, Currents API, Reddit, TheNewsAPI, Finnhub, ESPN
 - Built with React and Vite
@@ -364,4 +364,4 @@ For issues, questions, or suggestions, please open an issue on the [GitHub repos
 
 ---
 
-**Last Updated**: March 2026 - Includes interactive dashboard layouts, merged news sources, and a configurable Reddit widget.
+**Last Updated**: March 2026 - BlackDeck includes interactive dashboard layouts, merged news sources, and a configurable Reddit widget.
