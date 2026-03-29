@@ -19,6 +19,7 @@ import { Clock } from './widgets/Clock';
 import { Weather } from './widgets/Weather';
 import { Calendar } from './widgets/Calendar';
 import { News } from './widgets/News';
+import { Reddit } from './widgets/Reddit';
 import { Compliments } from './widgets/Compliments';
 import { Stocks } from './widgets/Stocks';
 import { Crypto } from './widgets/Crypto';
@@ -41,6 +42,7 @@ const WIDGET_COMPONENTS = {
   weather: Weather,
   calendar: Calendar,
   news: News,
+  reddit: Reddit,
   compliments: Compliments,
   stocks: Stocks,
   crypto: Crypto,
@@ -111,6 +113,16 @@ export const Dashboard = () => {
       );
     } else if (widgetType === 'news') {
       return <WidgetComponent apiKey={widgetSettings.newsApiKey || settings.newsApiKey} currentsApiKey={widgetSettings.currentsApiKey || settings.currentsApiKey} showFade={widgetSettings.showFade} />;
+    } else if (widgetType === 'reddit') {
+      return (
+        <WidgetComponent
+          subreddits={widgetSettings.redditSubreddits}
+          titlesPerSubreddit={widgetSettings.redditTitlesPerSubreddit}
+          pollIntervalMinutes={widgetSettings.redditPollIntervalMinutes}
+          rotationIntervalSeconds={widgetSettings.redditRotationIntervalSeconds}
+          showFade={widgetSettings.showFade}
+        />
+      );
     } else if (widgetType === 'compliments') {
       return (
         <WidgetComponent

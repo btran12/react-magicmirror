@@ -342,6 +342,68 @@ export const WidgetSettingsForm = ({ widgetType, settings = {}, onChange }) => {
           {renderFadeToggle()}
         </Stack>
       );
+    case 'reddit':
+      return (
+        <Stack spacing={2}>
+          <TextField
+            fullWidth
+            label="Favorite Subreddits"
+            type="text"
+            value={settings.redditSubreddits || ''}
+            onChange={(event) => updateSetting('redditSubreddits', event.target.value)}
+            placeholder="news, worldnews, UpliftingNews"
+            helperText="Comma-separated subreddit names (without r/)"
+            variant="outlined"
+            sx={{
+              ...fieldStyles,
+              '& .MuiFormHelperText-root': { color: '#999999' },
+            }}
+          />
+          <TextField
+            fullWidth
+            label="Titles Per Subreddit"
+            type="number"
+            value={settings.redditTitlesPerSubreddit ?? 5}
+            onChange={(event) => updateSetting('redditTitlesPerSubreddit', Number(event.target.value) || 1)}
+            inputProps={{ min: 1, max: 25, step: 1 }}
+            helperText="How many post titles to fetch from each subreddit"
+            variant="outlined"
+            sx={{
+              ...fieldStyles,
+              '& .MuiFormHelperText-root': { color: '#999999' },
+            }}
+          />
+          <TextField
+            fullWidth
+            label="Poll Interval (Minutes)"
+            type="number"
+            value={settings.redditPollIntervalMinutes ?? 30}
+            onChange={(event) => updateSetting('redditPollIntervalMinutes', Number(event.target.value) || 1)}
+            inputProps={{ min: 1, max: 1440, step: 1 }}
+            helperText="How often to refresh Reddit posts"
+            variant="outlined"
+            sx={{
+              ...fieldStyles,
+              '& .MuiFormHelperText-root': { color: '#999999' },
+            }}
+          />
+          <TextField
+            fullWidth
+            label="Rotation Interval (Seconds)"
+            type="number"
+            value={settings.redditRotationIntervalSeconds ?? 15}
+            onChange={(event) => updateSetting('redditRotationIntervalSeconds', Number(event.target.value) || 2)}
+            inputProps={{ min: 2, max: 300, step: 1 }}
+            helperText="How often to rotate to the next title"
+            variant="outlined"
+            sx={{
+              ...fieldStyles,
+              '& .MuiFormHelperText-root': { color: '#999999' },
+            }}
+          />
+          {renderFadeToggle()}
+        </Stack>
+      );
     case 'compliments':
       return (
         <Stack spacing={2}>

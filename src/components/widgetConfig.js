@@ -4,6 +4,7 @@ export const WIDGET_OPTIONS = [
   { value: 'weather', label: 'Weather' },
   { value: 'calendar', label: 'Calendar' },
   { value: 'news', label: 'News' },
+  { value: 'reddit', label: 'Reddit' },
   { value: 'compliments', label: 'Compliments' },
   { value: 'stocks', label: 'Stocks' },
   { value: 'crypto', label: 'Crypto' },
@@ -16,6 +17,7 @@ export const WIDGET_LABELS = {
   weather: 'Weather',
   calendar: 'Calendar',
   news: 'News',
+  reddit: 'Reddit',
   compliments: 'Compliments',
   stocks: 'Stocks',
   crypto: 'Crypto',
@@ -130,6 +132,7 @@ export const DEFAULT_WIDGET_FADE = {
   weather: true,
   calendar: false,
   news: false,
+  reddit: false,
   compliments: false,
   stocks: false,
   crypto: false,
@@ -199,6 +202,15 @@ export const createWidgetSettingsForType = (widgetType, defaults = {}) => {
         widgetType,
         newsApiKey: defaults.newsApiKey || '',
         showFade: defaults.showFade ?? DEFAULT_WIDGET_FADE.news,
+      };
+    case 'reddit':
+      return {
+        widgetType,
+        redditSubreddits: defaults.redditSubreddits || 'news,worldnews,UpliftingNews',
+        redditTitlesPerSubreddit: defaults.redditTitlesPerSubreddit || 5,
+        redditPollIntervalMinutes: defaults.redditPollIntervalMinutes || 30,
+        redditRotationIntervalSeconds: defaults.redditRotationIntervalSeconds || 15,
+        showFade: defaults.showFade ?? DEFAULT_WIDGET_FADE.reddit,
       };
     case 'compliments':
       return {
