@@ -216,7 +216,7 @@ export const News = ({ apiKey, currentsApiKey, showFade = false }) => {
               fontWeight: 'light',
               color: '#ffffff',
               lineHeight: 1.2,
-              fontFamily: 'monospace',
+              fontFamily: 'var(--font-family, monospace)',
               opacity: isFading ? 0 : 1,
               transition: 'opacity 0.5s ease-in-out',
               textAlign: 'center',
