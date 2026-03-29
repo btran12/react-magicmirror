@@ -23,11 +23,43 @@ export const WIDGET_LABELS = {
   sports: 'Sports',
 };
 
-export const GRID_LAYOUT = [
-  { row: 1, cols: '3-6-3', positions: [0, 1, 2] },
-  { row: 2, cols: '3-6-3', positions: [3, 4, 5] },
-  { row: 3, cols: '12', positions: [6] },
-];
+export const LAYOUT_PRESETS = {
+  classic: {
+    id: 'classic',
+    label: 'Classic',
+    description: 'Balanced three-row layout with a full-width footer widget.',
+    gridTemplateRows: '2fr 2fr 1fr',
+    rows: [
+      { id: 'top', label: 'Top Row', colSpans: [3, 6, 3], positions: [0, 1, 2] },
+      { id: 'middle', label: 'Middle Row', colSpans: [3, 6, 3], positions: [3, 4, 5] },
+      { id: 'bottom', label: 'Bottom Row', colSpans: [12], positions: [6] },
+    ],
+  },
+  spotlight: {
+    id: 'spotlight',
+    label: 'Spotlight',
+    description: 'Highlights one large primary widget with supporting slots.',
+    gridTemplateRows: '2fr 1.5fr 1fr',
+    rows: [
+      { id: 'top', label: 'Top Row', colSpans: [8, 4], positions: [0, 1] },
+      { id: 'middle', label: 'Middle Row', colSpans: [4, 4, 4], positions: [2, 3, 4] },
+      { id: 'bottom', label: 'Bottom Row', colSpans: [6, 6], positions: [5, 6] },
+    ],
+  },
+  quad: {
+    id: 'quad',
+    label: 'Quad + Footer',
+    description: 'Two-by-two main grid plus a three-widget footer row.',
+    gridTemplateRows: '1.8fr 1.8fr 1fr',
+    rows: [
+      { id: 'top', label: 'Top Row', colSpans: [6, 6], positions: [0, 1] },
+      { id: 'middle', label: 'Middle Row', colSpans: [6, 6], positions: [2, 3] },
+      { id: 'bottom', label: 'Bottom Row', colSpans: [4, 4, 4], positions: [4, 5, 6] },
+    ],
+  },
+};
+
+export const DEFAULT_LAYOUT_PRESET = 'classic';
 
 export const POSITION_LABELS = {
   0: 'Top Left',
@@ -62,6 +94,11 @@ export const DEFAULT_LAYOUT = [
 ];
 
 export const LAYOUT_SLOT_COUNT = 7;
+
+export const normalizeLayoutPreset = (presetId) =>
+  LAYOUT_PRESETS[presetId] ? presetId : DEFAULT_LAYOUT_PRESET;
+
+export const getLayoutPreset = (presetId) => LAYOUT_PRESETS[normalizeLayoutPreset(presetId)];
 
 export const getPositionLabel = (position) => POSITION_LABELS[position] || `Position ${position + 1}`;
 

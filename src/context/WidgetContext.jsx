@@ -2,7 +2,9 @@ import React, { createContext, useState, useCallback } from 'react';
 import {
   createWidgetSettingsForType,
   DEFAULT_LAYOUT,
+  DEFAULT_LAYOUT_PRESET,
   DEFAULT_WIDGET_FADE,
+  normalizeLayoutPreset,
   normalizeLayoutWidgets,
 } from '../components/widgetConfig';
 
@@ -36,13 +38,16 @@ const getInitialLayout = () => {
   try {
     const stored = localStorage.getItem('layout');
     const widgets = stored ? normalizeLayoutWidgets(JSON.parse(stored)) : DEFAULT_LAYOUT;
+    const preset = normalizeLayoutPreset(localStorage.getItem('layoutPreset') || DEFAULT_LAYOUT_PRESET);
     return {
       widgets,
+      preset,
     };
   } catch (e) {
     console.error('Error parsing layout from localStorage:', e);
     return {
       widgets: DEFAULT_LAYOUT,
+      preset: DEFAULT_LAYOUT_PRESET,
     };
   }
 };
@@ -126,12 +131,14 @@ export const WidgetProvider = ({ children }) => {
     addNotification('Settings saved', 'success');
   }, [addNotification]);
 
-  const updateLayout = useCallback((newLayout) => {
+  const updateLayout = useCallback((newLayout, preset = layout.preset) => {
     const normalizedLayout = normalizeLayoutWidgets(newLayout);
-    setLayout({ widgets: normalizedLayout });
+    const normalizedPreset = normalizeLayoutPreset(preset);
+    setLayout({ widgets: normalizedLayout, preset: normalizedPreset });
     localStorage.setItem('layout', JSON.stringify(normalizedLayout));
+    localStorage.setItem('layoutPreset', normalizedPreset);
     addNotification('Layout saved', 'success');
-  }, [addNotification]);
+  }, [addNotification, layout.preset]);
 
   const updateWidgetSettings = useCallback((newWidgetSettings, layoutWidgets = layout.widgets, settingsOverride = settings, fadeSettingsOverride = fadeSettings) => {
     const next = buildWidgetSettingsForLayout(layoutWidgets, newWidgetSettings, settingsOverride, fadeSettingsOverride);
@@ -140,10 +147,12 @@ export const WidgetProvider = ({ children }) => {
     addNotification('Widget settings saved', 'success');
   }, [addNotification, fadeSettings, layout.widgets, settings]);
 
-  const saveDashboardConfiguration = useCallback((newLayout, newWidgetSettings, newSettings) => {
+  const saveDashboardConfiguration = useCallback((newLayout, newWidgetSettings, newSettings, preset = layout.preset) => {
     const normalizedLayout = normalizeLayoutWidgets(newLayout);
-    setLayout({ widgets: normalizedLayout });
+    const normalizedPreset = normalizeLayoutPreset(preset);
+    setLayout({ widgets: normalizedLayout, preset: normalizedPreset });
     localStorage.setItem('layout', JSON.stringify(normalizedLayout));
+    localStorage.setItem('layoutPreset', normalizedPreset);
 
     setSettings(prev => {
       const updated = { ...prev, ...newSettings };
@@ -158,7 +167,7 @@ export const WidgetProvider = ({ children }) => {
     localStorage.setItem('widgetSettings', JSON.stringify(nextWidgetSettings));
 
     addNotification('Settings saved', 'success');
-  }, [addNotification, fadeSettings]);
+  }, [addNotification, fadeSettings, layout.preset]);
 
   const updateFadeSettings = useCallback((newFadeSettings) => {
     setFadeSettings(newFadeSettings);
@@ -200,9 +209,10 @@ export const WidgetProvider = ({ children }) => {
       fadeSettings
     );
 
-    setLayout({ widgets: nextLayout });
+    setLayout({ widgets: nextLayout, preset: layout.preset });
     setWidgetSettings(normalizedWidgetSettings);
     localStorage.setItem('layout', JSON.stringify(nextLayout));
+    localStorage.setItem('layoutPreset', layout.preset);
     localStorage.setItem('widgetSettings', JSON.stringify(normalizedWidgetSettings));
 
     addNotification(widgetType ? 'Widget updated' : 'Widget removed', 'success');

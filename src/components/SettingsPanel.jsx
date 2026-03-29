@@ -4,6 +4,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  TextField,
   Select,
   MenuItem,
   FormControl,
@@ -16,14 +17,25 @@ import {
   Grid,
 } from '@mui/material';
 import { WidgetContext } from '../context/WidgetContext';
-import { WidgetSettingsForm } from './WidgetSettingsForm';
 import {
   createWidgetSettingsForType,
+  getLayoutPreset,
   getPositionLabel,
-  GRID_LAYOUT,
-  WIDGET_LABELS,
+  LAYOUT_PRESETS,
+  normalizeLayoutPreset,
   WIDGET_OPTIONS,
 } from './widgetConfig';
+
+const fieldStyles = {
+  '& .MuiOutlinedInput-root': {
+    color: '#ffffff',
+    '& fieldset': { borderColor: '#444444' },
+    '&:hover fieldset': { borderColor: '#555555' },
+    '&.Mui-focused fieldset': { borderColor: '#2196f3' },
+  },
+  '& .MuiInputBase-input::placeholder': { color: '#888888', opacity: 1 },
+  '& .MuiInputLabel-root': { color: '#cccccc' },
+};
 
 const selectStyles = {
   color: '#ffffff',
@@ -45,7 +57,6 @@ const buildSettingsDefaultsFromInstances = (layoutWidgets, widgetSettingsMap, pr
     }
 
     if (widgetType === 'weather') {
-      nextSettings.openweatherApiKey = instanceSettings.openweatherApiKey || nextSettings.openweatherApiKey;
       nextSettings.location = instanceSettings.location || nextSettings.location;
       nextSettings.tempUnit = instanceSettings.tempUnit || nextSettings.tempUnit;
       nextSettings.clockFormat = instanceSettings.clockFormat || nextSettings.clockFormat;
@@ -55,22 +66,12 @@ const buildSettingsDefaultsFromInstances = (layoutWidgets, widgetSettingsMap, pr
       nextSettings.icsUrl = instanceSettings.icsUrl;
     }
 
-    if (widgetType === 'news' && instanceSettings.newsApiKey) {
-      nextSettings.newsApiKey = instanceSettings.newsApiKey;
-    }
-
-    if (widgetType === 'stocks' && instanceSettings.finnhubApiKey) {
-      nextSettings.finnhubApiKey = instanceSettings.finnhubApiKey;
-    }
-
     if (widgetType === 'airquality') {
-      nextSettings.openweatherApiKey = instanceSettings.openweatherApiKey || nextSettings.openweatherApiKey;
       nextSettings.location = instanceSettings.location || nextSettings.location;
     }
 
     if (widgetType === 'compliments') {
       nextSettings.complimentsConfigUrl = instanceSettings.complimentsConfigUrl || nextSettings.complimentsConfigUrl;
-      nextSettings.openweatherApiKey = instanceSettings.openweatherApiKey || nextSettings.openweatherApiKey;
       nextSettings.location = instanceSettings.location || nextSettings.location;
     }
   });
@@ -82,6 +83,7 @@ export const SettingsPanel = ({ isOpen, onClose }) => {
   const { settings, layout, widgetSettings, saveDashboardConfiguration } = useContext(WidgetContext);
   const [localSettings, setLocalSettings] = useState(settings);
   const [localLayout, setLocalLayout] = useState(layout.widgets);
+  const [localLayoutPreset, setLocalLayoutPreset] = useState(layout.preset);
   const [localWidgetSettings, setLocalWidgetSettings] = useState(widgetSettings);
 
   useEffect(() => {
@@ -89,8 +91,9 @@ export const SettingsPanel = ({ isOpen, onClose }) => {
 
     setLocalSettings(settings);
     setLocalLayout(layout.widgets);
+    setLocalLayoutPreset(layout.preset);
     setLocalWidgetSettings(widgetSettings);
-  }, [isOpen, layout.widgets, settings, widgetSettings]);
+  }, [isOpen, layout.preset, layout.widgets, settings, widgetSettings]);
 
   const handleLayoutChange = (position, widgetType) => {
     const nextLayout = [...localLayout];
@@ -118,47 +121,21 @@ export const SettingsPanel = ({ isOpen, onClose }) => {
     });
   };
 
-  const handleWidgetSettingChange = (position, key, value) => {
-    setLocalWidgetSettings(prev => ({
+  const handleDefaultSettingChange = (key, value) => {
+    setLocalSettings((prev) => ({
       ...prev,
-      [position]: {
-        widgetType: prev[position]?.widgetType || localLayout[position],
-        ...prev[position],
-        [key]: value,
-      },
+      [key]: value,
     }));
   };
 
   const handleSave = () => {
     const nextSettings = buildSettingsDefaultsFromInstances(localLayout, localWidgetSettings, localSettings);
-    saveDashboardConfiguration(localLayout, localWidgetSettings, nextSettings);
+    saveDashboardConfiguration(localLayout, localWidgetSettings, nextSettings, localLayoutPreset);
     onClose();
   };
 
-  const selectedWidgets = localLayout
-    .map((widgetType, position) => {
-      if (!widgetType) return null;
-
-      return {
-        position,
-        widgetType,
-        settings: localWidgetSettings[position] || createWidgetSettingsForType(widgetType, localSettings),
-      };
-    })
-    .filter(Boolean);
-
-  const renderWidgetFields = (widget) => {
-    const position = widget.position;
-    const currentSettings = localWidgetSettings[position] || widget.settings;
-
-    return (
-      <WidgetSettingsForm
-        widgetType={widget.widgetType}
-        settings={currentSettings}
-        onChange={(key, value) => handleWidgetSettingChange(position, key, value)}
-      />
-    );
-  };
+  const layoutPresetOptions = Object.values(LAYOUT_PRESETS);
+  const activeLayoutPreset = getLayoutPreset(localLayoutPreset);
 
   return (
     <Dialog
@@ -182,13 +159,33 @@ export const SettingsPanel = ({ isOpen, onClose }) => {
         <Stack spacing={4}>
           <Box>
             <Typography sx={{ color: '#ffffff', fontWeight: 'bold', mb: 3 }}>Dashboard Layout</Typography>
+            <Stack spacing={2} sx={{ mb: 3 }}>
+              <FormControl size="small" variant="outlined" sx={{ maxWidth: 300 }}>
+                <InputLabel sx={{ color: '#cccccc' }}>Layout Preset</InputLabel>
+                <Select
+                  value={normalizeLayoutPreset(localLayoutPreset)}
+                  onChange={(e) => setLocalLayoutPreset(normalizeLayoutPreset(e.target.value))}
+                  label="Layout Preset"
+                  sx={selectStyles}
+                >
+                  {layoutPresetOptions.map((preset) => (
+                    <MenuItem key={preset.id} value={preset.id}>
+                      {preset.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <Typography sx={{ color: '#999999', fontSize: '0.85rem' }}>
+                {activeLayoutPreset.description}
+              </Typography>
+            </Stack>
             <Stack spacing={3} divider={<Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.12)' }} />}>
-              {GRID_LAYOUT.map((row) => {
-                const colWidths = row.cols === '12' ? [12] : [3, 6, 3];
+              {activeLayoutPreset.rows.map((row) => {
+                const colWidths = row.colSpans;
                 return (
-                  <Box key={row.row}>
+                  <Box key={row.id}>
                     <Typography sx={{ color: '#ffffff', fontSize: '1rem', mb: 1 }}>
-                      {row.cols === '12' ? 'Bottom Row' : row.row === 1 ? 'Top Row' : 'Middle Row'}
+                      {row.label}
                     </Typography>
                     <Grid container spacing={2}>
                       {row.positions.map((position, index) => (
@@ -218,21 +215,42 @@ export const SettingsPanel = ({ isOpen, onClose }) => {
           </Box>
 
           <Box>
-            <Typography sx={{ color: '#ffffff', fontWeight: 'bold', mb: 2 }}>Widget Settings</Typography>
-            {selectedWidgets.length === 0 ? (
-              <Typography sx={{ color: '#888888' }}>Select widgets in the layout above to configure their settings.</Typography>
-            ) : (
-              <Stack spacing={3} divider={<Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.12)' }} />}>
-                {selectedWidgets.map((widget) => (
-                  <Box key={`${widget.widgetType}-${widget.position}`}>
-                    <Typography sx={{ color: '#ffffff', fontWeight: 'bold', mb: 2, fontSize: '1rem', textAlign: 'center' }}>
-                      {WIDGET_LABELS[widget.widgetType]} · {getPositionLabel(widget.position)}
-                    </Typography>
-                    {renderWidgetFields(widget)}
-                  </Box>
-                ))}
-              </Stack>
-            )}
+            <Typography sx={{ color: '#ffffff', fontWeight: 'bold', mb: 2 }}>Default Service API Keys</Typography>
+            <Stack spacing={2}>
+              <TextField
+                fullWidth
+                label="OpenWeather API Key (Weather / Air Quality / Compliments)"
+                type="password"
+                value={localSettings.openweatherApiKey || ''}
+                onChange={(e) => handleDefaultSettingChange('openweatherApiKey', e.target.value)}
+                placeholder="Enter default OpenWeather key"
+                variant="outlined"
+                sx={fieldStyles}
+              />
+              <TextField
+                fullWidth
+                label="TheNewsAPI Key (News)"
+                type="password"
+                value={localSettings.newsApiKey || ''}
+                onChange={(e) => handleDefaultSettingChange('newsApiKey', e.target.value)}
+                placeholder="Enter default TheNewsAPI key"
+                variant="outlined"
+                sx={fieldStyles}
+              />
+              <TextField
+                fullWidth
+                label="Finnhub API Key (Stocks)"
+                type="password"
+                value={localSettings.finnhubApiKey || ''}
+                onChange={(e) => handleDefaultSettingChange('finnhubApiKey', e.target.value)}
+                placeholder="Enter default Finnhub key"
+                variant="outlined"
+                sx={fieldStyles}
+              />
+              <Typography sx={{ color: '#999999', fontSize: '0.8rem' }}>
+                These defaults are used when adding new widgets or when widget-specific keys are left empty.
+              </Typography>
+            </Stack>
           </Box>
         </Stack>
       </DialogContent>

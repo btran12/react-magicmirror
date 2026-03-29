@@ -29,17 +29,12 @@ import { SettingsPanel } from './SettingsPanel';
 import { WidgetSettingsForm } from './WidgetSettingsForm';
 import {
   createWidgetSettingsForType,
+  getLayoutPreset,
   getPositionLabel,
   WIDGET_LABELS,
   WIDGET_OPTIONS,
 } from './widgetConfig';
 import { WidgetContext } from '../context/WidgetContext';
-
-const GRID_ROWS = [
-  { row: 1, colSpans: [3, 6, 3], positions: [0, 1, 2] },
-  { row: 2, colSpans: [3, 6, 3], positions: [3, 4, 5] },
-  { row: 3, colSpans: [12], positions: [6] },
-];
 
 const WIDGET_COMPONENTS = {
   clock: Clock,
@@ -62,8 +57,10 @@ export const Dashboard = () => {
     widgetType: '',
     settings: null,
   });
-  const { layout, getWidgetSettingsForPosition, saveWidgetConfiguration } = useContext(WidgetContext);
+  const { layout, settings, getWidgetSettingsForPosition, saveWidgetConfiguration } = useContext(WidgetContext);
   const widgets = layout.widgets;
+  const activeLayoutPreset = getLayoutPreset(layout.preset);
+  const gridRows = activeLayoutPreset.rows;
   const widgetChoices = WIDGET_OPTIONS.filter((option) => option.value);
 
   const renderWidget = (position, widgetType) => {
@@ -77,7 +74,7 @@ export const Dashboard = () => {
     if (widgetType === 'weather') {
       return (
         <WidgetComponent
-          apiKey={widgetSettings.openweatherApiKey}
+          apiKey={widgetSettings.openweatherApiKey || settings.openweatherApiKey}
           location={widgetSettings.location}
           tempUnit={widgetSettings.tempUnit}
           clockFormat={widgetSettings.clockFormat}
@@ -85,12 +82,12 @@ export const Dashboard = () => {
         />
       );
     } else if (widgetType === 'news') {
-      return <WidgetComponent apiKey={widgetSettings.newsApiKey} showFade={widgetSettings.showFade} />;
+      return <WidgetComponent apiKey={widgetSettings.newsApiKey || settings.newsApiKey} showFade={widgetSettings.showFade} />;
     } else if (widgetType === 'compliments') {
       return (
         <WidgetComponent
           configUrl={widgetSettings.complimentsConfigUrl}
-          weatherApiKey={widgetSettings.openweatherApiKey}
+          weatherApiKey={widgetSettings.openweatherApiKey || settings.openweatherApiKey}
           location={widgetSettings.location}
           showFade={widgetSettings.showFade}
         />
@@ -100,11 +97,11 @@ export const Dashboard = () => {
     } else if (widgetType === 'clock') {
       return <WidgetComponent clockFormat={widgetSettings.clockFormat} showFade={widgetSettings.showFade} />;
     } else if (widgetType === 'stocks') {
-      return <WidgetComponent apiKey={widgetSettings.finnhubApiKey} tickers={widgetSettings.stockTickers || []} showFade={widgetSettings.showFade} />;
+      return <WidgetComponent apiKey={widgetSettings.finnhubApiKey || settings.finnhubApiKey} tickers={widgetSettings.stockTickers || []} showFade={widgetSettings.showFade} />;
     } else if (widgetType === 'crypto') {
       return <WidgetComponent coins={widgetSettings.cryptoCoins || ['bitcoin', 'ethereum']} showFade={widgetSettings.showFade} />;
     } else if (widgetType === 'airquality') {
-      return <WidgetComponent apiKey={widgetSettings.openweatherApiKey} location={widgetSettings.location} showFade={widgetSettings.showFade} />;
+      return <WidgetComponent apiKey={widgetSettings.openweatherApiKey || settings.openweatherApiKey} location={widgetSettings.location} showFade={widgetSettings.showFade} />;
     } else if (widgetType === 'sports') {
       return (
         <WidgetComponent
@@ -207,8 +204,8 @@ export const Dashboard = () => {
 
       {/* Main Content Area - Full viewport without scrolling */}
       <Box sx={{ flex: 1, overflow: 'hidden', p: 2 }}>
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(12, 1fr)' }, gridTemplateRows: '2fr 2fr 1fr', gap: 2, height: '100%' }}>
-          {GRID_ROWS.map((row) =>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(12, 1fr)' }, gridTemplateRows: activeLayoutPreset.gridTemplateRows, gap: 2, height: '100%' }}>
+          {gridRows.map((row) =>
             row.positions.map((position, index) => (
               <Box
                 key={position}
@@ -243,9 +240,7 @@ export const Dashboard = () => {
                       ? '0 22px 48px rgba(0, 0, 0, 0.45)'
                       : '0 0 0 rgba(0, 0, 0, 0)',
                     zIndex: hoveredPosition === position ? 4 : 1,
-                    border: widgets[position]
-                      ? '1px solid rgba(255,255,255,0)'
-                      : '1px dashed rgba(255,255,255,0.18)',
+                    border: '1px solid rgba(255,255,255,0)',
                     borderColor: hoveredPosition === position
                       ? 'rgba(255,255,255,0.95)'
                       : undefined,
@@ -282,38 +277,40 @@ export const Dashboard = () => {
                   {widgets[position] ? (
                     renderWidget(position, widgets[position])
                   ) : (
-                    <Stack
-                      spacing={1}
-                      sx={{
-                        height: '100%',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: '#ffffff',
-                        px: 3,
-                        textAlign: 'center',
-                      }}
-                    >
-                      <Box
+                    hoveredPosition === position ? (
+                      <Stack
+                        spacing={1}
                         sx={{
-                          width: 56,
-                          height: 56,
-                          borderRadius: '50%',
-                          display: 'flex',
+                          height: '100%',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          bgcolor: 'rgba(255,255,255,0.08)',
-                          border: '1px solid rgba(255,255,255,0.14)',
+                          color: '#ffffff',
+                          px: 3,
+                          textAlign: 'center',
                         }}
                       >
-                        <AddRoundedIcon sx={{ fontSize: 30, color: '#ffffff' }} />
-                      </Box>
-                      <Typography sx={{ fontSize: '1rem', fontWeight: 600, color: '#ffffff' }}>
-                        Add a widget
-                      </Typography>
-                      <Typography sx={{ fontSize: '0.85rem', color: '#9a9a9a', maxWidth: '220px' }}>
-                        Choose a widget for {getPositionLabel(position)} and configure its settings.
-                      </Typography>
-                    </Stack>
+                        <Box
+                          sx={{
+                            width: 56,
+                            height: 56,
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            bgcolor: 'rgba(255,255,255,0.08)',
+                            border: '1px solid rgba(255,255,255,0.14)',
+                          }}
+                        >
+                          <AddRoundedIcon sx={{ fontSize: 30, color: '#ffffff' }} />
+                        </Box>
+                        <Typography sx={{ fontSize: '1rem', fontWeight: 600, color: '#ffffff' }}>
+                          Add a widget
+                        </Typography>
+                        <Typography sx={{ fontSize: '0.85rem', color: '#9a9a9a', maxWidth: '220px' }}>
+                          Choose a widget for {getPositionLabel(position)} and configure its settings.
+                        </Typography>
+                      </Stack>
+                    ) : null
                   )}
                 </Box>
               </Box>
