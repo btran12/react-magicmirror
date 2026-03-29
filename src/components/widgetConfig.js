@@ -1,3 +1,10 @@
+export const FONT_OPTIONS = [
+  { value: 'monospace', label: 'Monospace' },
+  { value: "'Raleway Dots', cursive", label: 'Raleway Dots' },
+];
+
+export const DEFAULT_FONT_FAMILY = 'monospace';
+
 export const WIDGET_OPTIONS = [
   { value: null, label: 'None' },
   { value: 'clock', label: 'Clock' },

@@ -1,6 +1,7 @@
-import React, { createContext, useState, useCallback } from 'react';
+import React, { createContext, useState, useCallback, useEffect } from 'react';
 import {
   createWidgetSettingsForType,
+  DEFAULT_FONT_FAMILY,
   DEFAULT_LAYOUT,
   DEFAULT_LAYOUT_PRESET,
   DEFAULT_WIDGET_FADE,
@@ -19,6 +20,7 @@ const getInitialSettings = () => ({
   clockFormat: localStorage.getItem('clockFormat') || '24h',
   icsUrl: localStorage.getItem('icsUrl') || '',
   complimentsConfigUrl: localStorage.getItem('complimentsConfigUrl') || '',
+  fontFamily: localStorage.getItem('fontFamily') || DEFAULT_FONT_FAMILY,
 });
 
 const getInitialFadeSettings = () => {
@@ -111,6 +113,10 @@ export const WidgetProvider = ({ children }) => {
   );
 
   const [notifications, setNotifications] = useState([]);
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--font-family', settings.fontFamily);
+  }, [settings.fontFamily]);
 
   const addNotification = useCallback((message, type = 'info', duration = 3000) => {
     const id = Date.now();

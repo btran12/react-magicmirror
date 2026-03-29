@@ -21,6 +21,7 @@ import {
   createWidgetSettingsForType,
   getLayoutPreset,
   getPositionLabel,
+  FONT_OPTIONS,
   LAYOUT_PRESETS,
   normalizeLayoutPreset,
   WIDGET_OPTIONS,
@@ -211,6 +212,27 @@ export const SettingsPanel = ({ isOpen, onClose }) => {
                   </Box>
                 );
               })}
+            </Stack>
+          </Box>
+
+          <Box>
+            <Typography sx={{ color: '#ffffff', fontWeight: 'bold', mb: 2 }}>Appearance</Typography>
+            <Stack spacing={2}>
+              <FormControl size="small" variant="outlined" sx={{ maxWidth: 300 }}>
+                <InputLabel sx={{ color: '#cccccc' }}>Font Family</InputLabel>
+                <Select
+                  value={localSettings.fontFamily || 'monospace'}
+                  onChange={(e) => handleDefaultSettingChange('fontFamily', e.target.value)}
+                  label="Font Family"
+                  sx={selectStyles}
+                >
+                  {FONT_OPTIONS.map((option) => (
+                    <MenuItem key={option.value} value={option.value} sx={{ fontFamily: option.value }}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
             </Stack>
           </Box>
 

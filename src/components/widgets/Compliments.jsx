@@ -186,7 +186,7 @@ export const Compliments = ({ configUrl, weatherApiKey, location, showFade = fal
             color: '#ffffff',
             fontWeight: 300,
             lineHeight: 1.3,
-            fontFamily: 'monospace, sans-serif',
+            fontFamily: 'var(--font-family, monospace)',
             opacity: isFading ? 0 : 1,
             transition: `opacity ${FADE_DURATION_MS}ms ease-in-out`,
           }}

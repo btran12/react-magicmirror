@@ -192,7 +192,7 @@ export const Reddit = ({
               fontSize: 'clamp(1.1rem, 1.5vw, 1.8rem)',
               color: '#ffffff',
               lineHeight: 1.3,
-              fontFamily: 'monospace',
+              fontFamily: 'var(--font-family, monospace)',
               textAlign: 'center',
               opacity: isFading ? 0 : 1,
               transition: 'opacity 0.5s ease-in-out',
