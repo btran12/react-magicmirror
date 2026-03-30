@@ -21,9 +21,43 @@ const getTimeBucket = (date = new Date()) => {
   return 'night';
 };
 
-const normalizeCondition = (main = '') => {
+const normalizeCondition = (main = '', windSpeed = 0, tempKelvin = 273.15) => {
   const value = String(main).toLowerCase();
+  
+  // Convert temperature from Kelvin to Celsius for easier comparison
+  const tempCelsius = tempKelvin - 273.15;
+  
+  // Check for precipitation that could create icy conditions
+  const isPrecipitation = value.includes('rain') || value.includes('drizzle') || value.includes('snow');
+  const isBelowFreezing = tempCelsius < 0;
+  
+  // Determine weather conditions in priority order
+  // Icy: precipitation + below freezing OR below -5°C
+  if ((isPrecipitation && isBelowFreezing) || tempCelsius < -5) {
+    return 'icy';
+  }
+  
+  // Hot: above 28°C (82°F) and not snowing
+  if (tempCelsius > 28 && !value.includes('snow')) {
+    return 'hot';
+  }
+  
+  // Cold: below 0°C (32°F) and not precipitation (precipitation handled above as icy)
+  if (tempCelsius < 0 && !isPrecipitation) {
+    return 'cold';
+  }
+  
+  // Windy: wind speed above 15 m/s (54 km/h, 33 mph)
+  if (windSpeed > 15) {
+    return 'windy';
+  }
+  
+  // Calm: wind speed below 3 m/s (11 km/h, 7 mph) and clear/cloudy
+  if (windSpeed < 3 && (value.includes('clear') || value.includes('cloud'))) {
+    return 'calm';
+  }
 
+  // Standard OpenWeatherMap conditions
   if (value.includes('thunder')) return 'thunderstorm';
   if (value.includes('drizzle')) return 'drizzle';
   if (value.includes('rain')) return 'rain';
@@ -124,7 +158,10 @@ export const Compliments = ({ configUrl, weatherApiKey, location, showFade = fal
 
         const weatherData = await response.json();
         const mainCondition = weatherData?.weather?.[0]?.main || 'default';
-        setWeatherCondition(normalizeCondition(mainCondition));
+        const windSpeed = weatherData?.wind?.speed || 0;
+        const tempKelvin = weatherData?.main?.temp || 273.15;
+        
+        setWeatherCondition(normalizeCondition(mainCondition, windSpeed, tempKelvin));
         setError(null);
       } catch (err) {
         setWeatherCondition('default');

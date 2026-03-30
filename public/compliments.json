@@ -80,6 +80,58 @@
       "The forecast says: 100% chance of you doing great.",
       "Bright day, bright moves."
     ],
+    "calm": [
+      "Today is calm. Use it for deep work.",
+      "Peaceful weather, powerful focus.",
+      "Gentle day, great opportunities.",
+      "Still air, steady progress.",
+      "Serene outside, serene inside. Perfect combo."
+    ],
+    "windy": [
+      "Windy today? Perfect energy to blow away your goals.",
+      "Strong winds, stronger will.",
+      "The wind is just cheering you on.",
+      "Gusty day, gritty determination.",
+      "Let it blow. You stand firm and brilliant.",
+      "Windy weather, unstoppable momentum.",
+      "Feel that wind? That is the sound of progress."
+    ],
+    "hot": [
+      "Hot one today. Stay hydrated and stay focused.",
+      "Heat does not slow you down. Never has.",
+      "Scorching day, cool execution.",
+      "Keep your cool. Your work will heat things up.",
+      "Hot weather, hotter goals.",
+      "When it is this hot, your calm focus stands out.",
+      "Embrace the heat. You thrive under pressure."
+    ],
+    "cold": [
+      "Freezing today. Warm up with your brilliance.",
+      "Cold outside, warm ambition inside.",
+      "Bundle up and unlock your potential.",
+      "Bitter cold, sweet wins.",
+      "You are tougher than this temperature.",
+      "The cold is just nature's way of warming up your momentum.",
+      "Here is to staying warm and staying focused."
+    ],
+    "icy": [
+      "Icy conditions: take it slow, stay sharp.",
+      "Slippery weather, solid decision-making.",
+      "Ice outside, fire inside.",
+      "Careful steps, confident direction.",
+      "You are steady. The roads may not be. Stay cautious.",
+      "Slow and steady wins the icy race.",
+      "Be mindful out there, then show up brilliantly."
+    ],
+    "snowy": [
+      "Snow day magic. Deep work mode activated.",
+      "Snowy and peaceful. Your ideal focus window.",
+      "Cold air, warm confidence.",
+      "Frosty weather, fire execution.",
+      "Quiet world, powerful thoughts.",
+      "Snow turns the world quiet. That is your jam.",
+      "Winter is calling. Your calm focus answers."
+    ],
     "clouds": [
       "Cloudy skies, clear intentions.",
       "Soft sky, sharp focus.",
@@ -107,13 +159,6 @@
       "When it gets loud, you get focused.",
       "Lightning sky, iron mindset.",
       "You are tougher than this forecast."
-    ],
-    "snow": [
-      "Snowy and quiet. Perfect for deep focus.",
-      "Snow day elegance. Move at your own pace.",
-      "Cold air, warm confidence.",
-      "Frosty weather, fire execution.",
-      "Quiet world, powerful thoughts."
     ],
     "mist": [
       "Even when visibility is low, your direction is clear.",
