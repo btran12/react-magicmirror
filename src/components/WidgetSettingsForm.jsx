@@ -197,6 +197,23 @@ export const WidgetSettingsForm = ({ widgetType, settings = {}, onChange }) => {
     />
   );
 
+  const renderPollingField = (label, settingKey, fallbackValue, helperText, min = 1, max = 1440) => (
+    <TextField
+      fullWidth
+      label={label}
+      type="number"
+      value={settings[settingKey] ?? fallbackValue}
+      onChange={(event) => updateSetting(settingKey, Number(event.target.value) || min)}
+      inputProps={{ min, max, step: 1 }}
+      helperText={helperText}
+      variant="outlined"
+      sx={{
+        ...fieldStyles,
+        '& .MuiFormHelperText-root': { color: '#999999' },
+      }}
+    />
+  );
+
   const renderLocationField = () => (
     <Autocomplete
       freeSolo
@@ -313,6 +330,12 @@ export const WidgetSettingsForm = ({ widgetType, settings = {}, onChange }) => {
               '& .MuiFormHelperText-root': { color: '#999999' },
             }}
           />
+          {renderPollingField(
+            'Poll Interval (Minutes)',
+            'weatherPollIntervalMinutes',
+            180,
+            'How often to refresh weather data'
+          )}
           {renderFadeToggle()}
         </Stack>
       );
@@ -329,6 +352,12 @@ export const WidgetSettingsForm = ({ widgetType, settings = {}, onChange }) => {
             variant="outlined"
             sx={fieldStyles}
           />
+          {renderPollingField(
+            'Poll Interval (Minutes)',
+            'calendarPollIntervalMinutes',
+            30,
+            'How often to refresh calendar events'
+          )}
           {renderFadeToggle()}
         </Stack>
       );
@@ -363,6 +392,12 @@ export const WidgetSettingsForm = ({ widgetType, settings = {}, onChange }) => {
               '& .MuiFormHelperText-root': { color: '#999999' },
             }}
           />
+          {renderPollingField(
+            'Poll Interval (Minutes)',
+            'newsPollIntervalMinutes',
+            30,
+            'How often to refresh headlines'
+          )}
           {renderFadeToggle()}
         </Stack>
       );
@@ -386,6 +421,12 @@ export const WidgetSettingsForm = ({ widgetType, settings = {}, onChange }) => {
               '& .MuiFormHelperText-root': { color: '#999999' },
             }}
           />
+          {renderPollingField(
+            'Poll Interval (Minutes)',
+            'holidaysPollIntervalMinutes',
+            720,
+            'How often to refresh holiday data'
+          )}
           {renderFadeToggle()}
         </Stack>
       );
@@ -483,6 +524,12 @@ export const WidgetSettingsForm = ({ widgetType, settings = {}, onChange }) => {
               '& .MuiFormHelperText-root': { color: '#999999' },
             }}
           />
+          {renderPollingField(
+            'Poll Interval (Minutes)',
+            'complimentsPollIntervalMinutes',
+            60,
+            'How often to refresh compliments config and weather context'
+          )}
           {renderFadeToggle()}
         </Stack>
       );
@@ -593,6 +640,12 @@ export const WidgetSettingsForm = ({ widgetType, settings = {}, onChange }) => {
               )}
             </Stack>
           </Box>
+          {renderPollingField(
+            'Poll Interval (Minutes)',
+            'stocksPollIntervalMinutes',
+            5,
+            'How often to refresh stock quotes'
+          )}
           {renderFadeToggle()}
         </Stack>
       );
@@ -654,6 +707,12 @@ export const WidgetSettingsForm = ({ widgetType, settings = {}, onChange }) => {
               )}
             </Stack>
           </Box>
+          {renderPollingField(
+            'Poll Interval (Minutes)',
+            'cryptoPollIntervalMinutes',
+            5,
+            'How often to refresh crypto prices'
+          )}
           {renderFadeToggle()}
         </Stack>
       );
@@ -676,6 +735,12 @@ export const WidgetSettingsForm = ({ widgetType, settings = {}, onChange }) => {
               '& .MuiFormHelperText-root': { color: '#999999' },
             }}
           />
+          {renderPollingField(
+            'Poll Interval (Minutes)',
+            'airQualityPollIntervalMinutes',
+            30,
+            'How often to refresh air quality data'
+          )}
           {renderFadeToggle()}
         </Stack>
       );
@@ -733,6 +798,14 @@ export const WidgetSettingsForm = ({ widgetType, settings = {}, onChange }) => {
               '& .MuiFormHelperText-root': { color: '#999999' },
             }}
           />
+          {renderPollingField(
+            'Live Poll Interval (Minutes)',
+            'sportsLivePollIntervalMinutes',
+            1,
+            'How often to refresh scores while games are live',
+            1,
+            60
+          )}
           {renderFadeToggle()}
         </Stack>
       );

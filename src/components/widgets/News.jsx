@@ -2,13 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { Box, Typography } from '@mui/material';
 import { Widget } from '../Widget';
 
-export const News = ({ apiKey, currentsApiKey, showFade = false }) => {
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+
+export const News = ({ apiKey, currentsApiKey, pollIntervalMinutes = 30, showFade = false }) => {
   const [articles, setArticles] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isFading, setIsFading] = useState(false);
-  const POLL_INTERVAL = 30 * 60 * 1000; // 30 minutes
+  const pollIntervalMs = clamp(Number(pollIntervalMinutes), 1, 1440) * 60 * 1000;
   const ROTATION_INTERVAL = 15 * 1000; // 15 seconds
   const TARGET_HEADLINES = 30;
 
@@ -149,9 +151,9 @@ export const News = ({ apiKey, currentsApiKey, showFade = false }) => {
     };
 
     fetchNews();
-    const pollInterval = setInterval(fetchNews, POLL_INTERVAL);
+    const pollInterval = setInterval(fetchNews, pollIntervalMs);
     return () => clearInterval(pollInterval);
-  }, [currentsApiKey]);
+  }, [currentsApiKey, pollIntervalMs]);
 
   // Rotate through headlines every 15 seconds
   useEffect(() => {

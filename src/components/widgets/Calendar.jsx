@@ -6,7 +6,7 @@ import {
 } from '@mui/material';
 import { Widget } from '../Widget';
 
-const REFRESH_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
 // Parse a bare iCal date/datetime value string into a Date.
 // Supports: YYYYMMDD, YYYYMMDDTHHmmSS, YYYYMMDDTHHmmSSZ
@@ -75,10 +75,11 @@ const parseIcs = (text) => {
   return events;
 };
 
-export const Calendar = ({ icsUrl, showFade = false }) => {
+export const Calendar = ({ icsUrl, pollIntervalMinutes = 30, showFade = false }) => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const normalizedPollIntervalMs = clamp(Number(pollIntervalMinutes), 1, 1440) * 60 * 1000;
 
   const fetchEvents = useCallback(async () => {
     if (!icsUrl) {
@@ -114,9 +115,9 @@ export const Calendar = ({ icsUrl, showFade = false }) => {
   // Fetch on mount / URL change, then refresh on interval
   useEffect(() => {
     fetchEvents();
-    const id = setInterval(fetchEvents, REFRESH_INTERVAL_MS);
+    const id = setInterval(fetchEvents, normalizedPollIntervalMs);
     return () => clearInterval(id);
-  }, [fetchEvents]);
+  }, [fetchEvents, normalizedPollIntervalMs]);
 
   const formatEventDate = (event) => {
     if (!event.start || isNaN(event.start)) return '';

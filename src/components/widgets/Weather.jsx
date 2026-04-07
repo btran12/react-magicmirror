@@ -11,13 +11,21 @@ import AirOutlinedIcon from '@mui/icons-material/AirOutlined';
 import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined';
 import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined';
 
-const WEATHER_REFRESH_MS = 3 * 60 * 60 * 1000; // 3 hours
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
-export const Weather = ({ apiKey, location, tempUnit = 'F', clockFormat = '24h', showFade = true }) => {
+export const Weather = ({
+  apiKey,
+  location,
+  tempUnit = 'F',
+  clockFormat = '24h',
+  pollIntervalMinutes = 180,
+  showFade = true,
+}) => {
   const [weather, setWeather] = useState(null);
   const [forecast, setForecast] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const normalizedPollIntervalMs = clamp(Number(pollIntervalMinutes), 1, 1440) * 60 * 1000;
 
   useEffect(() => {
     if (!apiKey || !location) {
@@ -66,9 +74,9 @@ export const Weather = ({ apiKey, location, tempUnit = 'F', clockFormat = '24h',
     };
 
     fetchWeather();
-    const interval = setInterval(fetchWeather, WEATHER_REFRESH_MS);
+    const interval = setInterval(fetchWeather, normalizedPollIntervalMs);
     return () => clearInterval(interval);
-  }, [apiKey, location, tempUnit]);
+  }, [apiKey, location, tempUnit, normalizedPollIntervalMs]);
 
   const getWeatherIcon = (weatherMain) => {
     const iconProps = { sx: { fontSize: 40 } };

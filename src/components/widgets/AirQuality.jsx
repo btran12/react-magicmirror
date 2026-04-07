@@ -3,7 +3,7 @@ import { Box, Typography } from '@mui/material';
 import AirIcon from '@mui/icons-material/Air';
 import { Widget } from '../Widget';
 
-const REFRESH_MS = 30 * 60 * 1000; // 30 minutes
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
 const AQI_LEVELS = [
   { max: 1, label: 'Good',      color: '#4caf50' },
@@ -33,10 +33,11 @@ const PollutantRow = ({ label, value, unit }) => (
   </Box>
 );
 
-export const AirQuality = ({ apiKey, location, showFade = false }) => {
+export const AirQuality = ({ apiKey, location, pollIntervalMinutes = 30, showFade = false }) => {
   const [airData, setAirData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const pollIntervalMs = clamp(Number(pollIntervalMinutes), 1, 1440) * 60 * 1000;
 
   useEffect(() => {
     if (!apiKey || !location) {
@@ -82,9 +83,9 @@ export const AirQuality = ({ apiKey, location, showFade = false }) => {
     };
 
     fetchAirQuality();
-    const interval = setInterval(fetchAirQuality, REFRESH_MS);
+    const interval = setInterval(fetchAirQuality, pollIntervalMs);
     return () => clearInterval(interval);
-  }, [apiKey, location]);
+  }, [apiKey, location, pollIntervalMs]);
 
   const aqiInfo = airData ? getAqiInfo(airData.aqi) : null;
   const comp = airData?.components || {};

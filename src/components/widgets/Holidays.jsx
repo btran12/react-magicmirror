@@ -3,10 +3,13 @@ import { Box, Stack, Typography } from '@mui/material';
 import { Widget } from '../Widget';
 import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
 
-export const Holidays = ({ apiKey = '', showFade = false }) => {
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+
+export const Holidays = ({ apiKey = '', pollIntervalMinutes = 720, showFade = false }) => {
   const [holidays, setHolidays] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const pollIntervalMs = clamp(Number(pollIntervalMinutes), 1, 1440) * 60 * 1000;
 
   useEffect(() => {
     if (!apiKey) {
@@ -58,7 +61,9 @@ export const Holidays = ({ apiKey = '', showFade = false }) => {
     };
 
     fetchHolidays();
-  }, [apiKey]);
+    const interval = setInterval(fetchHolidays, pollIntervalMs);
+    return () => clearInterval(interval);
+  }, [apiKey, pollIntervalMs]);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);

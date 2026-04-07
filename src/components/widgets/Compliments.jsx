@@ -5,6 +5,7 @@ import { Widget } from '../Widget';
 const DEFAULT_CONFIG_URL = `${import.meta.env.BASE_URL}compliments.json`;
 const MESSAGE_ROTATION_MS = 30 * 1000;
 const FADE_DURATION_MS = 1000;
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
 const EMPTY_CONFIG = {
   fallback: [],
@@ -85,7 +86,13 @@ const resolveConfigUrl = (value) => {
   return trimmed;
 };
 
-export const Compliments = ({ configUrl, weatherApiKey, location, showFade = false }) => {
+export const Compliments = ({
+  configUrl,
+  weatherApiKey,
+  location,
+  pollIntervalMinutes = 60,
+  showFade = false,
+}) => {
   const [config, setConfig] = useState(EMPTY_CONFIG);
   const [weatherCondition, setWeatherCondition] = useState('default');
   const [loading, setLoading] = useState(true);
@@ -95,6 +102,7 @@ export const Compliments = ({ configUrl, weatherApiKey, location, showFade = fal
 
   const sourceUrl = resolveConfigUrl(configUrl);
   const timeBucket = getTimeBucket();
+  const pollIntervalMs = clamp(Number(pollIntervalMinutes), 1, 1440) * 60 * 1000;
 
   useEffect(() => {
     const parseConfig = (data) => ({
@@ -137,7 +145,9 @@ export const Compliments = ({ configUrl, weatherApiKey, location, showFade = fal
     };
 
     fetchConfig();
-  }, [sourceUrl]);
+    const interval = setInterval(fetchConfig, pollIntervalMs);
+    return () => clearInterval(interval);
+  }, [pollIntervalMs, sourceUrl]);
 
   useEffect(() => {
     const fetchWeather = async () => {
@@ -172,7 +182,9 @@ export const Compliments = ({ configUrl, weatherApiKey, location, showFade = fal
     };
 
     fetchWeather();
-  }, [weatherApiKey, location]);
+    const interval = setInterval(fetchWeather, pollIntervalMs);
+    return () => clearInterval(interval);
+  }, [location, pollIntervalMs, weatherApiKey]);
 
   const messages = useMemo(() => {
     const timeMessages = Array.isArray(config.timeOfDay?.[timeBucket]) ? config.timeOfDay[timeBucket] : [];

@@ -202,24 +202,29 @@ export const createWidgetSettingsForType = (widgetType, defaults = {}) => {
         location: defaults.location || 'New York, New York',
         tempUnit: defaults.tempUnit || 'F',
         clockFormat: defaults.clockFormat || '24h',
+        weatherPollIntervalMinutes: defaults.weatherPollIntervalMinutes || 180,
         showFade: defaults.showFade ?? DEFAULT_WIDGET_FADE.weather,
       };
     case 'calendar':
       return {
         widgetType,
         icsUrl: defaults.icsUrl || '',
+        calendarPollIntervalMinutes: defaults.calendarPollIntervalMinutes || 30,
         showFade: defaults.showFade ?? DEFAULT_WIDGET_FADE.calendar,
       };
     case 'news':
       return {
         widgetType,
         newsApiKey: defaults.newsApiKey || '',
+        currentsApiKey: defaults.currentsApiKey || '',
+        newsPollIntervalMinutes: defaults.newsPollIntervalMinutes || 30,
         showFade: defaults.showFade ?? DEFAULT_WIDGET_FADE.news,
       };
     case 'holidays':
       return {
         widgetType,
         apiNinjasApiKey: defaults.apiNinjasApiKey || '',
+        holidaysPollIntervalMinutes: defaults.holidaysPollIntervalMinutes || 720,
         showFade: defaults.showFade ?? DEFAULT_WIDGET_FADE.holidays,
       };
     case 'reddit':
@@ -237,6 +242,7 @@ export const createWidgetSettingsForType = (widgetType, defaults = {}) => {
         complimentsConfigUrl: defaults.complimentsConfigUrl || '',
         openweatherApiKey: defaults.openweatherApiKey || '',
         location: defaults.location || 'New York, New York',
+        complimentsPollIntervalMinutes: defaults.complimentsPollIntervalMinutes || 60,
         showFade: defaults.showFade ?? DEFAULT_WIDGET_FADE.compliments,
       };
     case 'stocks':
@@ -244,12 +250,14 @@ export const createWidgetSettingsForType = (widgetType, defaults = {}) => {
         widgetType,
         finnhubApiKey: defaults.finnhubApiKey || '',
         stockTickers: defaults.stockTickers || [],
+        stocksPollIntervalMinutes: defaults.stocksPollIntervalMinutes || 5,
         showFade: defaults.showFade ?? DEFAULT_WIDGET_FADE.stocks,
       };
     case 'crypto':
       return {
         widgetType,
         cryptoCoins: defaults.cryptoCoins || ['bitcoin', 'ethereum'],
+        cryptoPollIntervalMinutes: defaults.cryptoPollIntervalMinutes || 5,
         showFade: defaults.showFade ?? DEFAULT_WIDGET_FADE.crypto,
       };
     case 'airquality':
@@ -257,6 +265,7 @@ export const createWidgetSettingsForType = (widgetType, defaults = {}) => {
         widgetType,
         openweatherApiKey: defaults.openweatherApiKey || '',
         location: defaults.location || 'New York, New York',
+        airQualityPollIntervalMinutes: defaults.airQualityPollIntervalMinutes || 30,
         showFade: defaults.showFade ?? DEFAULT_WIDGET_FADE.airquality,
       };
     case 'sports':
@@ -264,6 +273,7 @@ export const createWidgetSettingsForType = (widgetType, defaults = {}) => {
         widgetType,
         sportsLeagues: defaults.sportsLeagues || [],
         sportsTeams: defaults.sportsTeams || '',
+        sportsLivePollIntervalMinutes: defaults.sportsLivePollIntervalMinutes || 1,
         showFade: defaults.showFade ?? DEFAULT_WIDGET_FADE.sports,
       };
     case 'animations':

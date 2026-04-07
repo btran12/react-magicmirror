@@ -2,17 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { Box, Typography } from '@mui/material';
 import { Widget } from '../Widget';
 
-const REFRESH_MS = 5 * 60 * 1000; // 5 minutes
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
 const isWeekday = () => {
   const day = new Date().getDay();
   return day !== 0 && day !== 6; // 0 = Sunday, 6 = Saturday
 };
 
-export const Stocks = ({ apiKey, tickers = [], showFade = false }) => {
+export const Stocks = ({ apiKey, tickers = [], pollIntervalMinutes = 5, showFade = false }) => {
   const [quotes, setQuotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const pollIntervalMs = clamp(Number(pollIntervalMinutes), 1, 1440) * 60 * 1000;
 
   useEffect(() => {
     const validTickers = tickers.filter(t => t && t.trim());
@@ -58,10 +59,10 @@ export const Stocks = ({ apiKey, tickers = [], showFade = false }) => {
     fetchQuotes();
     const interval = setInterval(() => {
       if (isWeekday()) fetchQuotes();
-    }, REFRESH_MS);
+    }, pollIntervalMs);
     return () => clearInterval(interval);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiKey, JSON.stringify(tickers)]);
+  }, [apiKey, pollIntervalMs, JSON.stringify(tickers)]);
 
   const formatPrice = (price) => {
     if (price == null || price === 0) return '—';

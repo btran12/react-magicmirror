@@ -112,11 +112,19 @@ export const Dashboard = () => {
           location={widgetSettings.location}
           tempUnit={widgetSettings.tempUnit}
           clockFormat={widgetSettings.clockFormat}
+          pollIntervalMinutes={widgetSettings.weatherPollIntervalMinutes}
           showFade={widgetSettings.showFade}
         />
       );
     } else if (widgetType === 'news') {
-      return <WidgetComponent apiKey={widgetSettings.newsApiKey || settings.newsApiKey} currentsApiKey={widgetSettings.currentsApiKey || settings.currentsApiKey} showFade={widgetSettings.showFade} />;
+      return (
+        <WidgetComponent
+          apiKey={widgetSettings.newsApiKey || settings.newsApiKey}
+          currentsApiKey={widgetSettings.currentsApiKey || settings.currentsApiKey}
+          pollIntervalMinutes={widgetSettings.newsPollIntervalMinutes}
+          showFade={widgetSettings.showFade}
+        />
+      );
     } else if (widgetType === 'reddit') {
       return (
         <WidgetComponent
@@ -133,29 +141,63 @@ export const Dashboard = () => {
           configUrl={widgetSettings.complimentsConfigUrl}
           weatherApiKey={widgetSettings.openweatherApiKey || settings.openweatherApiKey}
           location={widgetSettings.location}
+          pollIntervalMinutes={widgetSettings.complimentsPollIntervalMinutes}
           showFade={widgetSettings.showFade}
         />
       );
     } else if (widgetType === 'calendar') {
-      return <WidgetComponent icsUrl={widgetSettings.icsUrl} showFade={widgetSettings.showFade} />;
+      return (
+        <WidgetComponent
+          icsUrl={widgetSettings.icsUrl}
+          pollIntervalMinutes={widgetSettings.calendarPollIntervalMinutes}
+          showFade={widgetSettings.showFade}
+        />
+      );
     } else if (widgetType === 'clock') {
       return <WidgetComponent clockFormat={widgetSettings.clockFormat} showFade={widgetSettings.showFade} />;
     } else if (widgetType === 'stocks') {
-      return <WidgetComponent apiKey={widgetSettings.finnhubApiKey || settings.finnhubApiKey} tickers={widgetSettings.stockTickers || []} showFade={widgetSettings.showFade} />;
+      return (
+        <WidgetComponent
+          apiKey={widgetSettings.finnhubApiKey || settings.finnhubApiKey}
+          tickers={widgetSettings.stockTickers || []}
+          pollIntervalMinutes={widgetSettings.stocksPollIntervalMinutes}
+          showFade={widgetSettings.showFade}
+        />
+      );
     } else if (widgetType === 'crypto') {
-      return <WidgetComponent coins={widgetSettings.cryptoCoins || ['bitcoin', 'ethereum']} showFade={widgetSettings.showFade} />;
+      return (
+        <WidgetComponent
+          coins={widgetSettings.cryptoCoins || ['bitcoin', 'ethereum']}
+          pollIntervalMinutes={widgetSettings.cryptoPollIntervalMinutes}
+          showFade={widgetSettings.showFade}
+        />
+      );
     } else if (widgetType === 'airquality') {
-      return <WidgetComponent apiKey={widgetSettings.openweatherApiKey || settings.openweatherApiKey} location={widgetSettings.location} showFade={widgetSettings.showFade} />;
+      return (
+        <WidgetComponent
+          apiKey={widgetSettings.openweatherApiKey || settings.openweatherApiKey}
+          location={widgetSettings.location}
+          pollIntervalMinutes={widgetSettings.airQualityPollIntervalMinutes}
+          showFade={widgetSettings.showFade}
+        />
+      );
     } else if (widgetType === 'sports') {
       return (
         <WidgetComponent
           leagues={widgetSettings.sportsLeagues || []}
           teams={widgetSettings.sportsTeams || ''}
+          livePollIntervalMinutes={widgetSettings.sportsLivePollIntervalMinutes}
           showFade={widgetSettings.showFade}
         />
       );
     } else if (widgetType === 'holidays') {
-      return <WidgetComponent apiKey={widgetSettings.apiNinjasApiKey || settings.apiNinjasApiKey} showFade={widgetSettings.showFade} />;
+      return (
+        <WidgetComponent
+          apiKey={widgetSettings.apiNinjasApiKey || settings.apiNinjasApiKey}
+          pollIntervalMinutes={widgetSettings.holidaysPollIntervalMinutes}
+          showFade={widgetSettings.showFade}
+        />
+      );
     } else if (widgetType === 'animations') {
       return (
         <WidgetComponent

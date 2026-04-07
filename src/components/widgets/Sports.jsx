@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, Typography } from '@mui/material';
 import { Widget } from '../Widget';
 
-const LIVE_REFRESH_MS = 60 * 1000; // 1 minute (for live scores)
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const UPCOMING_DAYS = 14; // look ahead window
 
 const LEAGUES = {
@@ -168,13 +168,19 @@ const partitionEvents = (events) => {
   return { todayEvents, upcomingEvents };
 };
 
-export const Sports = ({ leagues = [], teams = '', showFade = false }) => {
+export const Sports = ({
+  leagues = [],
+  teams = '',
+  livePollIntervalMinutes = 1,
+  showFade = false,
+}) => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const activeLeagues = leagues.filter((l) => LEAGUES[l]);
   const teamFilters = parseTeamFilters(teams);
+  const livePollIntervalMs = clamp(Number(livePollIntervalMinutes), 1, 60) * 60 * 1000;
 
   useEffect(() => {
     if (activeLeagues.length === 0) {
@@ -209,7 +215,7 @@ export const Sports = ({ leagues = [], teams = '', showFade = false }) => {
         const hasLiveMatches = filtered.some((ev) => getEventState(ev) === 'in');
 
         if (hasLiveMatches && !interval) {
-          interval = setInterval(fetchAll, LIVE_REFRESH_MS);
+          interval = setInterval(fetchAll, livePollIntervalMs);
         } else if (!hasLiveMatches) {
           stopPolling();
         }
@@ -234,7 +240,7 @@ export const Sports = ({ leagues = [], teams = '', showFade = false }) => {
       stopPolling();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeLeagues.join(','), teams]);
+  }, [activeLeagues.join(','), livePollIntervalMs, teams]);
 
   const { todayEvents, upcomingEvents } = partitionEvents(events);
   const hasToday = todayEvents.length > 0;

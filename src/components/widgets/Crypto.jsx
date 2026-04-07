@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, Typography } from '@mui/material';
 import { Widget } from '../Widget';
 
-const REFRESH_MS = 5 * 60 * 1000; // 5 minutes
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
 const COIN_DISPLAY_NAMES = {
   bitcoin: 'BTC',
@@ -20,10 +20,11 @@ const COIN_DISPLAY_NAMES = {
 const getCoinSymbol = (coinId) =>
   COIN_DISPLAY_NAMES[coinId.toLowerCase()] || coinId.toUpperCase();
 
-export const Crypto = ({ coins = ['bitcoin', 'ethereum'], showFade = false }) => {
+export const Crypto = ({ coins = ['bitcoin', 'ethereum'], pollIntervalMinutes = 5, showFade = false }) => {
   const [prices, setPrices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const pollIntervalMs = clamp(Number(pollIntervalMinutes), 1, 1440) * 60 * 1000;
 
   useEffect(() => {
     const validCoins = coins.filter((c) => c && c.trim());
@@ -74,10 +75,10 @@ export const Crypto = ({ coins = ['bitcoin', 'ethereum'], showFade = false }) =>
     };
 
     fetchPrices();
-    const interval = setInterval(fetchPrices, REFRESH_MS);
+    const interval = setInterval(fetchPrices, pollIntervalMs);
     return () => clearInterval(interval);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(coins)]);
+  }, [pollIntervalMs, JSON.stringify(coins)]);
 
   const formatPrice = (price) => {
     if (price == null) return '—';
