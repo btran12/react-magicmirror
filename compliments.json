@@ -1,0 +1,178 @@
+{
+  "version": 1,
+  "fallback": [
+    "You are doing great today.",
+    "Small steps still move you forward.",
+    "Your focus is your superpower.",
+    "Hello, legend. Yes, YOU.",
+    "Look at you, being iconic again.",
+    "Your future self is already bragging about you.",
+    "Plot twist: you totally got this.",
+    "Hello sexy. Keep shining.",
+    "You are the main character and the soundtrack.",
+    "Your effort today counts more than you think.",
+    "You are built for difficult things.",
+    "If confidence had a mascot, it would be you.",
+    "Your ideas are premium quality.",
+    "You make progress look good.",
+    "Great energy. Keep that." 
+  ],
+  "timeOfDay": {
+    "morning": [
+      "Good morning. Start strong and stay kind.",
+      "A fresh morning for fresh ideas.",
+      "Your day is full of possibility.",
+      "Morning, superstar. Coffee is optional, brilliance is not.",
+      "Rise and shine. The world ordered extra awesome today.",
+      "Good morning, beautiful human.",
+      "Today is a great day to surprise yourself.",
+      "New day, same unstoppable you.",
+      "Sun up, standards up.",
+      "Wake. Breathe. Win the small moments.",
+      "Your morning vibe is elite.",
+      "Morning check-in: still incredible."
+    ],
+    "afternoon": [
+      "Good afternoon. You are making solid progress.",
+      "Keep your momentum, one task at a time.",
+      "You have already done more than you think.",
+      "Afternoon status: still crushing it.",
+      "Hello, productivity icon.",
+      "You are halfway through and fully capable.",
+      "Afternoons were invented for comeback energy.",
+      "Strong pace, sharp mind, good decisions.",
+      "You are one focused session away from momentum.",
+      "Quick reminder: your work matters.",
+      "Keep going, genius."
+    ],
+    "evening": [
+      "Good evening. You earned this calmer pace.",
+      "Finish proud, not perfect.",
+      "Reflect, reset, and recharge.",
+      "Evening glow looks good on you.",
+      "Close the day with style.",
+      "You handled a lot today. Respect.",
+      "Good evening, rockstar.",
+      "Wrap-up mode: graceful and strong.",
+      "Leave perfection. Keep progress.",
+      "You did enough to be proud tonight.",
+      "Calm mind, bright tomorrow."
+    ],
+    "night": [
+      "Good night. Rest is productive too.",
+      "Tomorrow gets a better version of you.",
+      "Close the day with gratitude.",
+      "Night mode activated: cozy and undefeated.",
+      "Power down, recharge, repeat greatness.",
+      "Even champions sleep.",
+      "You are allowed to rest without earning it.",
+      "The to-do list can wait. You matter more.",
+      "Good night, brilliant person.",
+      "Dream big, sleep deep.",
+      "Today was not perfect, but you showed up."
+    ]
+  },
+  "weather": {
+    "clear": [
+      "Sun is out. Let your ideas shine too.",
+      "Clear skies, clear mind, clear wins.",
+      "Vitamin D and main-character energy.",
+      "The forecast says: 100% chance of you doing great.",
+      "Bright day, bright moves."
+    ],
+    "calm": [
+      "Today is calm. Use it for deep work.",
+      "Peaceful weather, powerful focus.",
+      "Gentle day, great opportunities.",
+      "Still air, steady progress.",
+      "Serene outside, serene inside. Perfect combo."
+    ],
+    "windy": [
+      "Windy today? Perfect energy to blow away your goals.",
+      "Strong winds, stronger will.",
+      "The wind is just cheering you on.",
+      "Gusty day, gritty determination.",
+      "Let it blow. You stand firm and brilliant.",
+      "Windy weather, unstoppable momentum.",
+      "Feel that wind? That is the sound of progress."
+    ],
+    "hot": [
+      "Hot one today. Stay hydrated and stay focused.",
+      "Heat does not slow you down. Never has.",
+      "Scorching day, cool execution.",
+      "Keep your cool. Your work will heat things up.",
+      "Hot weather, hotter goals.",
+      "When it is this hot, your calm focus stands out.",
+      "Embrace the heat. You thrive under pressure."
+    ],
+    "cold": [
+      "Freezing today. Warm up with your brilliance.",
+      "Cold outside, warm ambition inside.",
+      "Bundle up and unlock your potential.",
+      "Bitter cold, sweet wins.",
+      "You are tougher than this temperature.",
+      "The cold is just nature's way of warming up your momentum.",
+      "Here is to staying warm and staying focused."
+    ],
+    "icy": [
+      "Icy conditions: take it slow, stay sharp.",
+      "Slippery weather, solid decision-making.",
+      "Ice outside, fire inside.",
+      "Careful steps, confident direction.",
+      "You are steady. The roads may not be. Stay cautious.",
+      "Slow and steady wins the icy race.",
+      "Be mindful out there, then show up brilliantly."
+    ],
+    "snowy": [
+      "Snow day magic. Deep work mode activated.",
+      "Snowy and peaceful. Your ideal focus window.",
+      "Cold air, warm confidence.",
+      "Frosty weather, fire execution.",
+      "Quiet world, powerful thoughts.",
+      "Snow turns the world quiet. That is your jam.",
+      "Winter is calling. Your calm focus answers."
+    ],
+    "clouds": [
+      "Cloudy skies, clear intentions.",
+      "Soft sky, sharp focus.",
+      "Cloud cover cannot hide your spark.",
+      "Moody weather, steady excellence.",
+      "Gray outside, gold-standard effort inside."
+    ],
+    "rain": [
+      "Rainy day, steady progress.",
+      "Rain soundtrack, deep work mode.",
+      "Let it rain. You still bring the sunshine.",
+      "Puddle weather, power moves.",
+      "Stormy outside, calm and capable inside."
+    ],
+    "drizzle": [
+      "A little drizzle is no match for your drive.",
+      "Tiny drops, big momentum.",
+      "Drizzle day, determination deluxe.",
+      "Mild weather, major potential.",
+      "You are still the headline today."
+    ],
+    "thunderstorm": [
+      "Storms pass. Stay grounded and keep going.",
+      "Thunder outside, composure inside.",
+      "When it gets loud, you get focused.",
+      "Lightning sky, iron mindset.",
+      "You are tougher than this forecast."
+    ],
+    "mist": [
+      "Even when visibility is low, your direction is clear.",
+      "Foggy view, focused values.",
+      "You do not need perfect visibility to move forward.",
+      "Low visibility, high self-trust.",
+      "One clear next step is enough."
+    ],
+    "default": [
+      "Whatever the weather, your effort matters.",
+      "Forecast uncertain. Your potential is not.",
+      "No matter the sky, you bring good energy.",
+      "Adaptable and excellent. That is your weather type.",
+      "Climate changes. Your character stays strong."
+    ]
+  }
+}
