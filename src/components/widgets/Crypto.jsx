@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography } from '@mui/material';
 import { Widget } from '../Widget';
+import { useBackendService } from '../../hooks/useBackendService';
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
@@ -20,14 +21,29 @@ const COIN_DISPLAY_NAMES = {
 const getCoinSymbol = (coinId) =>
   COIN_DISPLAY_NAMES[coinId.toLowerCase()] || coinId.toUpperCase();
 
-export const Crypto = ({ coins = ['bitcoin', 'ethereum'], pollIntervalMinutes = 5, showFade = false }) => {
+export const Crypto = ({ coins = ['bitcoin', 'ethereum'], pollIntervalMinutes = 5, showFade = false, usePremium = false }) => {
   const [prices, setPrices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const pollIntervalMs = clamp(Number(pollIntervalMinutes), 1, 1440) * 60 * 1000;
 
+  const validCoins = coins.filter((c) => c && c.trim());
+  const backendService = useBackendService(
+    '/v1/services/crypto',
+    { ids: validCoins.join(',') },
+    pollIntervalMinutes
+  );
+
   useEffect(() => {
-    const validCoins = coins.filter((c) => c && c.trim());
+    // Use backend service if premium
+    if (usePremium) {
+      if (backendService.data) {
+        setPrices(backendService.data);
+      }
+      setLoading(backendService.loading);
+      setError(backendService.error);
+      return;
+    }
 
     if (validCoins.length === 0) {
       setError('No coins configured');
@@ -78,7 +94,7 @@ export const Crypto = ({ coins = ['bitcoin', 'ethereum'], pollIntervalMinutes = 
     const interval = setInterval(fetchPrices, pollIntervalMs);
     return () => clearInterval(interval);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pollIntervalMs, JSON.stringify(coins)]);
+  }, [usePremium, pollIntervalMs, JSON.stringify(coins), backendService.data, backendService.loading, backendService.error]);
 
   const formatPrice = (price) => {
     if (price == null) return '—';

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Stack, Typography } from '@mui/material';
 import { Widget } from '../Widget';
+import { useBackendService } from '../../hooks/useBackendService';
 import WbSunnyOutlinedIcon from '@mui/icons-material/WbSunnyOutlined';
 import CloudOutlinedIcon from '@mui/icons-material/CloudOutlined';
 import WaterDropOutlinedIcon from '@mui/icons-material/WaterDropOutlined';
@@ -20,6 +21,7 @@ export const Weather = ({
   clockFormat = '24h',
   pollIntervalMinutes = 180,
   showFade = true,
+  usePremium = false,
 }) => {
   const [weather, setWeather] = useState(null);
   const [forecast, setForecast] = useState(null);
@@ -27,7 +29,20 @@ export const Weather = ({
   const [error, setError] = useState(null);
   const normalizedPollIntervalMs = clamp(Number(pollIntervalMinutes), 1, 1440) * 60 * 1000;
 
+  const backendService = useBackendService(
+    '/v1/services/weather',
+    { location, tempUnit },
+    pollIntervalMinutes
+  );
+
   useEffect(() => {
+    if (usePremium) {
+      setWeather(backendService.data);
+      setLoading(backendService.loading);
+      setError(backendService.error);
+      return;
+    }
+
     if (!apiKey || !location) {
       setError('API key or location not configured');
       setLoading(false);

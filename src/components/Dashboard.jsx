@@ -38,6 +38,7 @@ import {
   WIDGET_OPTIONS,
 } from './widgetConfig';
 import { WidgetContext } from '../context/WidgetContext';
+import { useAuth } from '../context/AuthContext';
 
 const WIDGET_COMPONENTS = {
   clock: Clock,
@@ -65,6 +66,7 @@ export const Dashboard = () => {
     settings: null,
   });
   const { layout, settings, getWidgetSettingsForPosition, saveWidgetConfiguration } = useContext(WidgetContext);
+  const { isPremium } = useAuth();
   const settingsButtonHideTimerRef = useRef(null);
   const widgets = layout.widgets;
   const activeLayoutPreset = getLayoutPreset(layout.preset);
@@ -114,6 +116,7 @@ export const Dashboard = () => {
           clockFormat={widgetSettings.clockFormat}
           pollIntervalMinutes={widgetSettings.weatherPollIntervalMinutes}
           showFade={widgetSettings.showFade}
+          usePremium={isPremium}
         />
       );
     } else if (widgetType === 'news') {
@@ -123,6 +126,7 @@ export const Dashboard = () => {
           currentsApiKey={widgetSettings.currentsApiKey || settings.currentsApiKey}
           pollIntervalMinutes={widgetSettings.newsPollIntervalMinutes}
           showFade={widgetSettings.showFade}
+          usePremium={isPremium}
         />
       );
     } else if (widgetType === 'reddit') {
@@ -162,6 +166,7 @@ export const Dashboard = () => {
           tickers={widgetSettings.stockTickers || []}
           pollIntervalMinutes={widgetSettings.stocksPollIntervalMinutes}
           showFade={widgetSettings.showFade}
+          usePremium={isPremium}
         />
       );
     } else if (widgetType === 'crypto') {
@@ -170,6 +175,7 @@ export const Dashboard = () => {
           coins={widgetSettings.cryptoCoins || ['bitcoin', 'ethereum']}
           pollIntervalMinutes={widgetSettings.cryptoPollIntervalMinutes}
           showFade={widgetSettings.showFade}
+          usePremium={isPremium}
         />
       );
     } else if (widgetType === 'airquality') {
@@ -196,6 +202,7 @@ export const Dashboard = () => {
           apiKey={widgetSettings.apiNinjasApiKey || settings.apiNinjasApiKey}
           pollIntervalMinutes={widgetSettings.holidaysPollIntervalMinutes}
           showFade={widgetSettings.showFade}
+          usePremium={isPremium}
         />
       );
     } else if (widgetType === 'animations') {

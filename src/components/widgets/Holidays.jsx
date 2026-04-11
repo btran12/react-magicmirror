@@ -1,17 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Stack, Typography } from '@mui/material';
 import { Widget } from '../Widget';
+import { useBackendService } from '../../hooks/useBackendService';
 import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
-export const Holidays = ({ apiKey = '', pollIntervalMinutes = 720, showFade = false }) => {
+export const Holidays = ({ apiKey = '', pollIntervalMinutes = 720, showFade = false, usePremium = false }) => {
   const [holidays, setHolidays] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const pollIntervalMs = clamp(Number(pollIntervalMinutes), 1, 1440) * 60 * 1000;
 
+  const backendService = useBackendService(
+    '/v1/services/holidays',
+    {},
+    pollIntervalMinutes
+  );
+
   useEffect(() => {
+    // Use backend service if premium
+    if (usePremium) {
+      if (backendService.data) {
+        setHolidays(backendService.data);
+      }
+      setLoading(backendService.loading);
+      setError(backendService.error);
+      return;
+    }
+
     if (!apiKey) {
       setError('API key not configured');
       setLoading(false);
@@ -63,7 +80,7 @@ export const Holidays = ({ apiKey = '', pollIntervalMinutes = 720, showFade = fa
     fetchHolidays();
     const interval = setInterval(fetchHolidays, pollIntervalMs);
     return () => clearInterval(interval);
-  }, [apiKey, pollIntervalMs]);
+  }, [usePremium, apiKey, pollIntervalMs, backendService.data, backendService.loading, backendService.error]);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);

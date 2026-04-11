@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography } from '@mui/material';
 import { Widget } from '../Widget';
+import { useBackendService } from '../../hooks/useBackendService';
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
@@ -9,14 +10,29 @@ const isWeekday = () => {
   return day !== 0 && day !== 6; // 0 = Sunday, 6 = Saturday
 };
 
-export const Stocks = ({ apiKey, tickers = [], pollIntervalMinutes = 5, showFade = false }) => {
+export const Stocks = ({ apiKey, tickers = [], pollIntervalMinutes = 5, showFade = false, usePremium = false }) => {
   const [quotes, setQuotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const pollIntervalMs = clamp(Number(pollIntervalMinutes), 1, 1440) * 60 * 1000;
 
+  const validTickers = tickers.filter(t => t && t.trim());
+  const backendService = useBackendService(
+    '/v1/services/stocks',
+    { tickers: validTickers.join(',') },
+    pollIntervalMinutes
+  );
+
   useEffect(() => {
-    const validTickers = tickers.filter(t => t && t.trim());
+    // Use backend service if premium
+    if (usePremium) {
+      if (backendService.data) {
+        setQuotes(backendService.data);
+      }
+      setLoading(backendService.loading);
+      setError(backendService.error);
+      return;
+    }
 
     if (!apiKey) {
       setError('Finnhub API key not configured');
@@ -62,7 +78,7 @@ export const Stocks = ({ apiKey, tickers = [], pollIntervalMinutes = 5, showFade
     }, pollIntervalMs);
     return () => clearInterval(interval);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiKey, pollIntervalMs, JSON.stringify(tickers)]);
+  }, [usePremium, apiKey, pollIntervalMs, JSON.stringify(tickers), backendService.data, backendService.loading, backendService.error]);
 
   const formatPrice = (price) => {
     if (price == null || price === 0) return '—';

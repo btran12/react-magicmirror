@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography } from '@mui/material';
 import { Widget } from '../Widget';
+import { useBackendService } from '../../hooks/useBackendService';
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
-export const News = ({ apiKey, currentsApiKey, pollIntervalMinutes = 180, showFade = false }) => {
+export const News = ({ apiKey, currentsApiKey, pollIntervalMinutes = 180, showFade = false, usePremium = false }) => {
   const [articles, setArticles] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -13,6 +14,12 @@ export const News = ({ apiKey, currentsApiKey, pollIntervalMinutes = 180, showFa
   const pollIntervalMs = clamp(Number(pollIntervalMinutes), 1, 1440) * 60 * 1000;
   const ROTATION_INTERVAL = 15 * 1000; // 15 seconds
   const TARGET_HEADLINES = 30;
+
+  const backendService = useBackendService(
+    '/v1/services/news',
+    {},
+    pollIntervalMinutes
+  );
 
   // Fetch from Currents API
   const fetchFromCurrentsAPI = async (key) => {
@@ -124,12 +131,16 @@ export const News = ({ apiKey, currentsApiKey, pollIntervalMinutes = 180, showFa
         let currentsArticles = [];
         let redditArticles = [];
 
-        // Try Currents API first (primary)
-        if (currentsApiKey) {
+        // Fetch Currents API - either direct (free) or from backend (premium)
+        if (usePremium && backendService.data) {
+          // Premium: use backend service data
+          currentsArticles = backendService.data;
+        } else if (!usePremium && currentsApiKey) {
+          // Free: call Currents API directly if key available
           currentsArticles = await fetchFromCurrentsAPI(currentsApiKey);
         }
 
-        // Always try Reddit API (fallback/supplement)
+        // ALWAYS fetch Reddit API (it's free, no auth needed)
         redditArticles = await fetchFromRedditAPI();
 
         // Merge results
@@ -153,7 +164,7 @@ export const News = ({ apiKey, currentsApiKey, pollIntervalMinutes = 180, showFa
     fetchNews();
     const pollInterval = setInterval(fetchNews, pollIntervalMs);
     return () => clearInterval(pollInterval);
-  }, [currentsApiKey, pollIntervalMs]);
+  }, [usePremium, currentsApiKey, pollIntervalMs, backendService.data]);
 
   // Rotate through headlines every 15 seconds
   useEffect(() => {

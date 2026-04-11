@@ -15,7 +15,9 @@ import {
   Stack,
   Typography,
   Grid,
+  Chip,
 } from '@mui/material';
+import { useAuth } from '../context/AuthContext';
 import { WidgetContext } from '../context/WidgetContext';
 import {
   createWidgetSettingsForType,
@@ -29,37 +31,66 @@ import {
 
 const fieldStyles = {
   '& .MuiOutlinedInput-root': {
-    color: '#ffffff',
-    '& fieldset': { borderColor: '#444444' },
-    '&:hover fieldset': { borderColor: '#555555' },
-    '&.Mui-focused fieldset': { borderColor: '#2196f3' },
+    color: '#f3f3f3',
+    bgcolor: 'rgba(255,255,255,0.04)',
+    borderRadius: 2,
+    transition: 'background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease',
+    '& fieldset': { borderColor: 'rgba(255,255,255,0.08)' },
+    '&:hover': {
+      bgcolor: 'rgba(255,255,255,0.06)',
+    },
+    '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.16)' },
+    '&.Mui-focused': {
+      bgcolor: 'rgba(33,150,243,0.08)',
+      boxShadow: '0 0 0 3px rgba(33,150,243,0.12)',
+    },
+    '&.Mui-focused fieldset': { borderColor: '#4dabf5' },
   },
-  '& .MuiInputBase-input::placeholder': { color: '#888888', opacity: 1 },
-  '& .MuiInputLabel-root': { color: '#cccccc' },
+  '& .MuiInputBase-input::placeholder': { color: '#7e8794', opacity: 1 },
+  '& .MuiInputLabel-root': { color: '#9ea7b3' },
+  '& .MuiInputLabel-root.Mui-focused': { color: '#90caf9' },
 };
 
 const selectStyles = {
-  color: '#ffffff',
-  '& .MuiOutlinedInput-notchedOutline': { borderColor: '#444444' },
-  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#555555' },
-  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#2196f3' },
-  '& .MuiSvgIcon-root': { color: '#ffffff' },
+  color: '#f3f3f3',
+  bgcolor: 'rgba(255,255,255,0.04)',
+  borderRadius: 2,
+  transition: 'background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease',
+  '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.08)' },
+  '&:hover': {
+    bgcolor: 'rgba(255,255,255,0.06)',
+  },
+  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.16)' },
+  '&.Mui-focused': {
+    bgcolor: 'rgba(33,150,243,0.08)',
+    boxShadow: '0 0 0 3px rgba(33,150,243,0.12)',
+  },
+  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#4dabf5' },
+  '& .MuiSvgIcon-root': { color: '#d5d9df' },
 };
 
 const menuProps = {
   PaperProps: {
     sx: {
-      bgcolor: '#000000',
-      color: '#ffffff',
+      bgcolor: '#121212',
+      color: '#f3f3f3',
+      border: '1px solid rgba(255,255,255,0.08)',
+      backgroundImage: 'linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01))',
+      '& .MuiList-root': {
+        py: 0.5,
+      },
       '& .MuiMenuItem-root': {
-        color: '#ffffff',
+        color: '#f3f3f3',
+        borderRadius: 1,
+        mx: 0.5,
+        my: 0.25,
         '&:hover': {
-          bgcolor: '#2196f3',
+          bgcolor: 'rgba(33,150,243,0.16)',
         },
         '&.Mui-selected': {
-          bgcolor: '#2196f3',
+          bgcolor: 'rgba(33,150,243,0.24)',
           '&:hover': {
-            bgcolor: '#2196f3',
+            bgcolor: 'rgba(33,150,243,0.3)',
           },
         },
       },
@@ -101,12 +132,94 @@ const buildSettingsDefaultsFromInstances = (layoutWidgets, widgetSettingsMap, pr
   return nextSettings;
 };
 
+const entitlementEndpoint = import.meta.env.VITE_ENTITLEMENT_ENDPOINT || '/v1/entitlements/me';
+
+const getPremiumStatusFromEntitlement = (payload) => {
+  const plan = payload?.plan || payload?.subscription?.plan;
+  const status = payload?.status || payload?.subscription?.status;
+  const premiumFlag = payload?.premium;
+
+  if (premiumFlag === true) return 'premium';
+
+  if (typeof plan === 'string' && plan.toLowerCase() === 'premium') {
+    if (!status || ['active', 'trialing'].includes(String(status).toLowerCase())) {
+      return 'premium';
+    }
+  }
+
+  if (premiumFlag === false) return 'free';
+  if (typeof plan === 'string') return 'free';
+
+  return 'unknown';
+};
+
+const getPremiumChipConfig = (status) => {
+  if (status === 'premium') {
+    return {
+      label: 'Premium',
+      sx: {
+        height: 22,
+        bgcolor: '#f4b400',
+        color: '#111111',
+        fontWeight: 700,
+      },
+    };
+  }
+
+  if (status === 'free') {
+    return {
+      label: 'Free',
+      sx: {
+        height: 22,
+        bgcolor: 'transparent',
+        color: '#b0b0b0',
+        border: '1px solid #666666',
+      },
+    };
+  }
+
+  if (status === 'error') {
+    return {
+      label: 'Entitlement Error',
+      sx: {
+        height: 22,
+        bgcolor: 'transparent',
+        color: '#ff8a80',
+        border: '1px solid #ff8a80',
+      },
+    };
+  }
+
+  return {
+    label: 'Checking...',
+    sx: {
+      height: 22,
+      bgcolor: 'transparent',
+      color: '#90caf9',
+      border: '1px solid #90caf9',
+    },
+  };
+};
+
 export const SettingsPanel = ({ isOpen, onClose }) => {
   const { settings, layout, widgetSettings, saveDashboardConfiguration } = useContext(WidgetContext);
+  const auth = useAuth();
   const [localSettings, setLocalSettings] = useState(settings);
   const [localLayout, setLocalLayout] = useState(layout.widgets);
   const [localLayoutPreset, setLocalLayoutPreset] = useState(layout.preset);
   const [localWidgetSettings, setLocalWidgetSettings] = useState(widgetSettings);
+  const [authMode, setAuthMode] = useState('login');
+  const [authName, setAuthName] = useState('');
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authCode, setAuthCode] = useState('');
+  const [authNewPassword, setAuthNewPassword] = useState('');
+  const [authBusy, setAuthBusy] = useState(false);
+  const [authMessage, setAuthMessage] = useState('');
+  const [premiumStatus, setPremiumStatus] = useState('unknown');
+  const [entitlementDetail, setEntitlementDetail] = useState('');
+
+  const accountLabel = auth.user?.name || auth.user?.email || auth.user?.username || 'Signed in user';
 
   useEffect(() => {
     if (!isOpen) return;
@@ -115,7 +228,187 @@ export const SettingsPanel = ({ isOpen, onClose }) => {
     setLocalLayout(layout.widgets);
     setLocalLayoutPreset(layout.preset);
     setLocalWidgetSettings(widgetSettings);
+    setAuthMessage('');
+    auth.clearError();
   }, [isOpen, layout.preset, layout.widgets, settings, widgetSettings]);
+
+  useEffect(() => {
+    if (!isOpen || !auth.isAuthenticated || !auth.user?.accessToken) {
+      setPremiumStatus('unknown');
+      setEntitlementDetail('');
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const fetchEntitlement = async () => {
+      setPremiumStatus('unknown');
+      setEntitlementDetail('');
+
+      try {
+        const response = await fetch(entitlementEndpoint, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${auth.user.accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Entitlement check failed: ${response.status}`);
+        }
+
+        const payload = await response.json();
+        const nextStatus = getPremiumStatusFromEntitlement(payload);
+        setPremiumStatus(nextStatus === 'unknown' ? 'free' : nextStatus);
+
+        if (payload?.currentPeriodEnd) {
+          setEntitlementDetail(`Renews until ${new Date(payload.currentPeriodEnd).toLocaleDateString()}`);
+        }
+      } catch (err) {
+        if (err?.name !== 'AbortError') {
+          setPremiumStatus('error');
+          setEntitlementDetail('Could not load subscription status from backend.');
+        }
+      }
+    };
+
+    fetchEntitlement();
+
+    return () => controller.abort();
+  }, [isOpen, auth.isAuthenticated, auth.user?.accessToken]);
+
+  useEffect(() => {
+    if (!auth.isAuthenticated) return;
+
+    setAuthMode('login');
+    setAuthPassword('');
+    setAuthCode('');
+    setAuthNewPassword('');
+    setAuthMessage('You are signed in.');
+  }, [auth.isAuthenticated]);
+
+  useEffect(() => {
+    if (auth.isAuthenticated) return;
+    if (auth.signInStep === 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED') {
+      setAuthMode('newPassword');
+      setAuthMessage('Set a new password to finish signing in.');
+    }
+  }, [auth.isAuthenticated, auth.signInStep]);
+
+  const switchAuthMode = (mode) => {
+    setAuthMode(mode);
+    setAuthMessage('');
+    auth.clearError();
+  };
+
+  const handleLogin = async () => {
+    if (!authEmail || !authPassword) {
+      setAuthMessage('Enter your email and password.');
+      return;
+    }
+
+    setAuthBusy(true);
+    const result = await auth.login({ email: authEmail.trim(), password: authPassword });
+    setAuthBusy(false);
+
+    if (result.success && result.isAuthenticated) {
+      setAuthMessage('Logged in successfully.');
+      setAuthPassword('');
+      return;
+    }
+
+    if (!result.success && result.nextStep) {
+      if (result.nextStep === 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED') {
+        setAuthMode('newPassword');
+        setAuthMessage('Set a new password to finish signing in.');
+      } else {
+        setAuthMessage(`Login needs extra verification (${result.nextStep}). Complete that step and try again.`);
+      }
+    }
+  };
+
+  const handleCompleteNewPassword = async () => {
+    if (!authNewPassword) {
+      setAuthMessage('Enter a new password.');
+      return;
+    }
+
+    setAuthBusy(true);
+    const result = await auth.completeNewPassword({ newPassword: authNewPassword });
+    setAuthBusy(false);
+
+    if (result.success && result.isAuthenticated) {
+      setAuthMessage('Password updated. Logged in successfully.');
+      setAuthPassword('');
+      setAuthCode('');
+      setAuthNewPassword('');
+      return;
+    }
+
+    if (!result.success && result.nextStep) {
+      setAuthMessage(`Login still needs verification (${result.nextStep}).`);
+    }
+  };
+
+  const handleSignup = async () => {
+    if (!authName.trim() || !authEmail || !authPassword) {
+      setAuthMessage('Enter your name, email, and password to sign up.');
+      return;
+    }
+
+    setAuthBusy(true);
+    const result = await auth.register({
+      name: authName.trim(),
+      email: authEmail.trim(),
+      password: authPassword,
+    });
+    setAuthBusy(false);
+
+    if (result.success) {
+      if (result.nextStep === 'CONFIRM_SIGN_UP') {
+        setAuthMessage('Account created. Enter the verification code from your email.');
+        setAuthMode('confirm');
+      } else {
+        setAuthMessage('Sign up completed. You can now use your account.');
+      }
+      setAuthPassword('');
+    }
+  };
+
+  const handleConfirmSignup = async () => {
+    if (!authEmail || !authCode) {
+      setAuthMessage('Enter your email and verification code.');
+      return;
+    }
+
+    setAuthBusy(true);
+    const result = await auth.confirmRegistration({ email: authEmail.trim(), code: authCode.trim() });
+    setAuthBusy(false);
+
+    if (result.success) {
+      setAuthMessage('Email verified. Log in with your new account.');
+      setAuthCode('');
+      setAuthMode('login');
+    }
+  };
+
+  const handleLogout = async () => {
+    setAuthBusy(true);
+    const result = await auth.logout();
+    setAuthBusy(false);
+
+    if (result.success) {
+      setAuthMessage('Logged out.');
+      setAuthCode('');
+      setAuthPassword('');
+      setAuthNewPassword('');
+      setAuthName('');
+      setAuthEmail('');
+      setAuthMode('login');
+    }
+  };
 
   const handleLayoutChange = (position, widgetType) => {
     const nextLayout = [...localLayout];
@@ -158,6 +451,7 @@ export const SettingsPanel = ({ isOpen, onClose }) => {
 
   const layoutPresetOptions = Object.values(LAYOUT_PRESETS);
   const activeLayoutPreset = getLayoutPreset(localLayoutPreset);
+  const premiumChip = getPremiumChipConfig(premiumStatus);
 
   return (
     <Dialog
@@ -168,8 +462,25 @@ export const SettingsPanel = ({ isOpen, onClose }) => {
       PaperProps={{
         sx: {
           bgcolor: '#1a1a1a',
-          backgroundImage: 'none',
+          backgroundImage: 'linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015))',
+          border: '1px solid rgba(255,255,255,0.08)',
+          boxShadow: '0 24px 80px rgba(0,0,0,0.45)',
           maxHeight: '90vh',
+          scrollbarColor: '#3c4653 #161616',
+          '& ::-webkit-scrollbar': {
+            width: '10px',
+          },
+          '& ::-webkit-scrollbar-track': {
+            background: '#161616',
+          },
+          '& ::-webkit-scrollbar-thumb': {
+            background: 'linear-gradient(180deg, #3a4552, #2a313a)',
+            borderRadius: '999px',
+            border: '2px solid #161616',
+          },
+          '& ::-webkit-scrollbar-thumb:hover': {
+            background: 'linear-gradient(180deg, #4a5868, #33404d)',
+          },
         },
       }}
     >
@@ -177,8 +488,279 @@ export const SettingsPanel = ({ isOpen, onClose }) => {
         Settings
       </DialogTitle>
 
-      <DialogContent sx={{ pt: 2, overflowY: 'auto' }}>
+      <DialogContent
+        sx={{
+          pt: 2,
+          overflowY: 'auto',
+          pr: 1.5,
+          scrollbarWidth: 'thin',
+          scrollbarColor: '#3c4653 #161616',
+          '&::-webkit-scrollbar': {
+            width: '10px',
+          },
+          '&::-webkit-scrollbar-track': {
+            background: '#161616',
+            borderRadius: '999px',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            background: 'linear-gradient(180deg, #3a4552, #2a313a)',
+            borderRadius: '999px',
+            border: '2px solid #161616',
+          },
+          '&::-webkit-scrollbar-thumb:hover': {
+            background: 'linear-gradient(180deg, #4a5868, #33404d)',
+          },
+        }}
+      >
         <Stack spacing={4}>
+          <Box>
+            <Typography sx={{ color: '#ffffff', fontWeight: 'bold', mb: 2 }}>Account</Typography>
+            <Stack spacing={1.5}>
+              {auth.isLoading && (
+                <Typography sx={{ color: '#999999', fontSize: '0.9rem' }}>Checking sign-in status...</Typography>
+              )}
+
+              {auth.error && (
+                <Typography sx={{ color: '#ff8a80', fontSize: '0.85rem' }}>
+                  {auth.error}
+                </Typography>
+              )}
+
+              {authMessage && (
+                <Typography sx={{ color: '#90caf9', fontSize: '0.85rem' }}>
+                  {authMessage}
+                </Typography>
+              )}
+
+              {!auth.isLoading && auth.isAuthenticated && (
+                <>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                    <Typography sx={{ color: '#c8e6c9', fontSize: '0.9rem' }}>
+                      Signed in as {accountLabel}
+                    </Typography>
+                    <Chip size="small" label={premiumChip.label} sx={premiumChip.sx} />
+                  </Box>
+
+                  {entitlementDetail && (
+                    <Typography sx={{ color: '#999999', fontSize: '0.8rem' }}>
+                      {entitlementDetail}
+                    </Typography>
+                  )}
+
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button
+                      onClick={handleLogout}
+                      disabled={authBusy}
+                      variant="outlined"
+                      sx={{
+                        color: '#ffffff',
+                        borderColor: '#444444',
+                        '&:hover': { borderColor: '#555555', bgcolor: 'rgba(255,255,255,0.05)' },
+                      }}
+                    >
+                      Log Out
+                    </Button>
+                  </Box>
+                </>
+              )}
+
+              {!auth.isLoading && !auth.isAuthenticated && (
+                <Stack spacing={1.5}>
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    <Button
+                      onClick={() => switchAuthMode('login')}
+                      variant={authMode === 'login' ? 'contained' : 'outlined'}
+                      size="small"
+                      sx={{
+                        bgcolor: authMode === 'login' ? '#2196f3' : 'transparent',
+                        color: '#ffffff',
+                        borderColor: '#444444',
+                        '&:hover': {
+                          borderColor: '#555555',
+                          bgcolor: authMode === 'login' ? '#1976d2' : 'rgba(255,255,255,0.05)',
+                        },
+                      }}
+                    >
+                      Log In
+                    </Button>
+                    <Button
+                      onClick={() => switchAuthMode('signup')}
+                      variant={authMode === 'signup' ? 'contained' : 'outlined'}
+                      size="small"
+                      sx={{
+                        bgcolor: authMode === 'signup' ? '#2196f3' : 'transparent',
+                        color: '#ffffff',
+                        borderColor: '#444444',
+                        '&:hover': {
+                          borderColor: '#555555',
+                          bgcolor: authMode === 'signup' ? '#1976d2' : 'rgba(255,255,255,0.05)',
+                        },
+                      }}
+                    >
+                      Sign Up
+                    </Button>
+                    <Button
+                      onClick={() => switchAuthMode('confirm')}
+                      variant={authMode === 'confirm' ? 'contained' : 'outlined'}
+                      size="small"
+                      sx={{
+                        bgcolor: authMode === 'confirm' ? '#2196f3' : 'transparent',
+                        color: '#ffffff',
+                        borderColor: '#444444',
+                        '&:hover': {
+                          borderColor: '#555555',
+                          bgcolor: authMode === 'confirm' ? '#1976d2' : 'rgba(255,255,255,0.05)',
+                        },
+                      }}
+                    >
+                      Verify Code
+                    </Button>
+                    <Button
+                      onClick={() => switchAuthMode('newPassword')}
+                      variant={authMode === 'newPassword' ? 'contained' : 'outlined'}
+                      size="small"
+                      sx={{
+                        bgcolor: authMode === 'newPassword' ? '#2196f3' : 'transparent',
+                        color: '#ffffff',
+                        borderColor: '#444444',
+                        '&:hover': {
+                          borderColor: '#555555',
+                          bgcolor: authMode === 'newPassword' ? '#1976d2' : 'rgba(255,255,255,0.05)',
+                        },
+                      }}
+                    >
+                      New Password
+                    </Button>
+                  </Box>
+
+                  {authMode === 'signup' && (
+                    <TextField
+                      fullWidth
+                      label="Full Name"
+                      value={authName}
+                      onChange={(e) => setAuthName(e.target.value)}
+                      placeholder="Enter your full name"
+                      variant="outlined"
+                      sx={fieldStyles}
+                    />
+                  )}
+
+                  <TextField
+                    fullWidth
+                    label="Email"
+                    value={authEmail}
+                    onChange={(e) => setAuthEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    variant="outlined"
+                    sx={fieldStyles}
+                  />
+
+                  {authMode !== 'confirm' && authMode !== 'newPassword' && (
+                    <TextField
+                      fullWidth
+                      label="Password"
+                      type="password"
+                      value={authPassword}
+                      onChange={(e) => setAuthPassword(e.target.value)}
+                      placeholder="Enter your password"
+                      variant="outlined"
+                      sx={fieldStyles}
+                    />
+                  )}
+
+                  {authMode === 'confirm' && (
+                    <TextField
+                      fullWidth
+                      label="Verification Code"
+                      value={authCode}
+                      onChange={(e) => setAuthCode(e.target.value)}
+                      placeholder="Enter email verification code"
+                      variant="outlined"
+                      sx={fieldStyles}
+                    />
+                  )}
+
+                  {authMode === 'newPassword' && (
+                    <TextField
+                      fullWidth
+                      label="New Password"
+                      type="password"
+                      value={authNewPassword}
+                      onChange={(e) => setAuthNewPassword(e.target.value)}
+                      placeholder="Enter a new secure password"
+                      variant="outlined"
+                      sx={fieldStyles}
+                    />
+                  )}
+
+                  {authMode === 'login' && (
+                    <Button
+                      onClick={handleLogin}
+                      disabled={authBusy}
+                      variant="contained"
+                      sx={{
+                        bgcolor: '#2196f3',
+                        color: '#ffffff',
+                        '&:hover': { bgcolor: '#1976d2' },
+                      }}
+                    >
+                      {authBusy ? 'Logging In...' : 'Log In'}
+                    </Button>
+                  )}
+
+                  {authMode === 'signup' && (
+                    <Button
+                      onClick={handleSignup}
+                      disabled={authBusy}
+                      variant="contained"
+                      sx={{
+                        bgcolor: '#2196f3',
+                        color: '#ffffff',
+                        '&:hover': { bgcolor: '#1976d2' },
+                      }}
+                    >
+                      {authBusy ? 'Creating Account...' : 'Create Account'}
+                    </Button>
+                  )}
+
+                  {authMode === 'confirm' && (
+                    <Button
+                      onClick={handleConfirmSignup}
+                      disabled={authBusy}
+                      variant="contained"
+                      sx={{
+                        bgcolor: '#2196f3',
+                        color: '#ffffff',
+                        '&:hover': { bgcolor: '#1976d2' },
+                      }}
+                    >
+                      {authBusy ? 'Verifying...' : 'Verify Email'}
+                    </Button>
+                  )}
+
+                  {authMode === 'newPassword' && (
+                    <Button
+                      onClick={handleCompleteNewPassword}
+                      disabled={authBusy}
+                      variant="contained"
+                      sx={{
+                        bgcolor: '#2196f3',
+                        color: '#ffffff',
+                        '&:hover': { bgcolor: '#1976d2' },
+                      }}
+                    >
+                      {authBusy ? 'Updating Password...' : 'Set New Password'}
+                    </Button>
+                  )}
+                </Stack>
+              )}
+
+              <Typography sx={{ color: '#999999', fontSize: '0.8rem' }}>
+                Premium unlock and service access can be tied to this account after backend entitlement checks are enabled.
+              </Typography>
+            </Stack>
+          </Box>
+
           <Box>
             <Typography sx={{ color: '#ffffff', fontWeight: 'bold', mb: 3 }}>Dashboard Layout</Typography>
             <Stack spacing={2} sx={{ mb: 3 }}>

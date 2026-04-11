@@ -1,0 +1,806 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  Blackdeck entitlement backend. Creates a DynamoDB subscriptions table, a Lambda
+  entitlement handler, and a Cognito-protected API Gateway HTTP API endpoint at
+  GET /v1/entitlements/me.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: blackdeck
+    Description: Prefix used for resource names.
+
+  EnvironmentName:
+    Type: String
+    Default: dev
+    Description: Environment suffix for resource names.
+
+  StageName:
+    Type: String
+    Default: prod
+    Description: API Gateway stage name.
+
+  CognitoUserPoolId:
+    Type: String
+    Description: Cognito User Pool ID used to authenticate API requests.
+
+  CognitoAppClientId:
+    Type: String
+    Description: Cognito App Client ID accepted by the JWT authorizer.
+
+  CognitoRegion:
+    Type: String
+    Default: us-east-1
+    Description: AWS region where the Cognito User Pool lives.
+
+  AllowedOrigins:
+    Type: String
+    Default: http://localhost:5173,https://d84l1y8p4kdic.cloudfront.net
+    Description: Comma-separated list of frontend origins allowed to call the API.
+
+  OpenWeatherApiKey:
+    Type: String
+    NoEcho: true
+    Description: OpenWeather API key for weather service calls (https://openweathermap.org/api).
+
+  CurrentsApiKey:
+    Type: String
+    NoEcho: true
+    Description: Currents API key for news service calls (https://currentsapi.services).
+
+  FinnhubApiKey:
+    Type: String
+    NoEcho: true
+    Description: Finnhub API key for stocks service calls (https://finnhub.io).
+
+  ApiNinjasApiKey:
+    Type: String
+    NoEcho: true
+    Description: API Ninjas API key for holidays service calls (https://api-ninjas.com).
+
+Resources:
+  SubscriptionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${ProjectName}-${EnvironmentName}-subscriptions
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+      SSESpecification:
+        SSEEnabled: true
+
+  EntitlementsFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ProjectName}-${EnvironmentName}-entitlements-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: !Sub ${ProjectName}-${EnvironmentName}-subscriptions-read
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                Resource: !GetAtt SubscriptionsTable.Arn
+
+  EntitlementsFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub ${ProjectName}-${EnvironmentName}-entitlements
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 10
+      MemorySize: 256
+      Role: !GetAtt EntitlementsFunctionRole.Arn
+      Environment:
+        Variables:
+          SUBSCRIPTIONS_TABLE: !Ref SubscriptionsTable
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import boto3
+
+          dynamodb = boto3.resource("dynamodb")
+          table = dynamodb.Table(os.environ["SUBSCRIPTIONS_TABLE"])
+
+          PREMIUM_STATUSES = {"active", "trialing"}
+
+
+          def _response(status_code, body):
+              return {
+                  "statusCode": status_code,
+                  "headers": {
+                      "Content-Type": "application/json"
+                  },
+                  "body": json.dumps(body)
+              }
+
+
+          def handler(event, context):
+              claims = (
+                  event.get("requestContext", {})
+                  .get("authorizer", {})
+                  .get("jwt", {})
+                  .get("claims", {})
+              )
+
+              user_id = claims.get("sub")
+              if not user_id:
+                  return _response(401, {"message": "Unauthorized"})
+
+              result = table.get_item(Key={"userId": user_id})
+              item = result.get("Item")
+
+              if not item:
+                  return _response(
+                      200,
+                      {
+                          "premium": False,
+                          "plan": "free",
+                          "status": "active",
+                          "userId": user_id,
+                      },
+                  )
+
+              plan = str(item.get("plan", "free")).lower()
+              status = str(item.get("status", "active")).lower()
+              premium = plan == "premium" and status in PREMIUM_STATUSES
+
+              payload = {
+                  "premium": premium,
+                  "plan": plan,
+                  "status": status,
+                  "userId": user_id,
+              }
+
+              if item.get("currentPeriodEnd"):
+                  payload["currentPeriodEnd"] = item["currentPeriodEnd"]
+
+              return _response(200, payload)
+
+  EntitlementsApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-entitlements-api
+      ProtocolType: HTTP
+      CorsConfiguration:
+        AllowOrigins: !Split
+          - ','
+          - !Ref AllowedOrigins
+        AllowMethods:
+          - GET
+          - OPTIONS
+        AllowHeaders:
+          - authorization
+          - content-type
+        ExposeHeaders:
+          - content-type
+        MaxAge: 3600
+
+  EntitlementsJwtAuthorizer:
+    Type: AWS::ApiGatewayV2::Authorizer
+    Properties:
+      ApiId: !Ref EntitlementsApi
+      AuthorizerType: JWT
+      IdentitySource:
+        - $request.header.Authorization
+      Name: !Sub ${ProjectName}-${EnvironmentName}-cognito-jwt
+      JwtConfiguration:
+        Audience:
+          - !Ref CognitoAppClientId
+        Issuer: !Sub https://cognito-idp.${CognitoRegion}.amazonaws.com/${CognitoUserPoolId}
+
+  EntitlementsIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref EntitlementsApi
+      IntegrationType: AWS_PROXY
+      IntegrationMethod: POST
+      IntegrationUri: !GetAtt EntitlementsFunction.Arn
+      PayloadFormatVersion: '2.0'
+
+  EntitlementsRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref EntitlementsApi
+      RouteKey: GET /v1/entitlements/me
+      AuthorizationType: JWT
+      AuthorizerId: !Ref EntitlementsJwtAuthorizer
+      Target: !Sub integrations/${EntitlementsIntegration}
+
+  EntitlementsStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref EntitlementsApi
+      StageName: !Ref StageName
+      AutoDeploy: true
+
+  EntitlementsFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref EntitlementsFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${EntitlementsApi}/*/GET/v1/entitlements/me
+
+  ServicesFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ProjectName}-${EnvironmentName}-services-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: !Sub ${ProjectName}-${EnvironmentName}-subscriptions-check
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                Resource: !GetAtt SubscriptionsTable.Arn
+
+  WeatherFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub ${ProjectName}-${EnvironmentName}-weather
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 10
+      MemorySize: 256
+      Role: !GetAtt ServicesFunctionRole.Arn
+      Environment:
+        Variables:
+          SUBSCRIPTIONS_TABLE: !Ref SubscriptionsTable
+          OPENWEATHER_API_KEY: !Ref OpenWeatherApiKey
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import boto3
+          import urllib.request
+          import urllib.error
+          import urllib.parse
+
+          dynamodb = boto3.resource("dynamodb")
+          table = dynamodb.Table(os.environ["SUBSCRIPTIONS_TABLE"])
+          OPENWEATHER_API_KEY = os.environ["OPENWEATHER_API_KEY"]
+          PREMIUM_STATUSES = {"active", "trialing"}
+
+
+          def _response(status_code, body):
+              return {
+                  "statusCode": status_code,
+                  "headers": {
+                      "Content-Type": "application/json"
+                  },
+                  "body": json.dumps(body)
+              }
+
+
+          def _is_premium(user_id):
+              """Check if user has active premium subscription."""
+              result = table.get_item(Key={"userId": user_id})
+              item = result.get("Item")
+              if not item:
+                  return False
+              plan = str(item.get("plan", "free")).lower()
+              status = str(item.get("status", "active")).lower()
+              return plan == "premium" and status in PREMIUM_STATUSES
+
+
+          def handler(event, context):
+              # Extract JWT claims
+              claims = (
+                  event.get("requestContext", {})
+                  .get("authorizer", {})
+                  .get("jwt", {})
+                  .get("claims", {})
+              )
+
+              user_id = claims.get("sub")
+              if not user_id:
+                  return _response(401, {"message": "Unauthorized"})
+
+              # Check if user is premium (only premium can call weather)
+              if not _is_premium(user_id):
+                  return _response(403, {"message": "Premium feature. Subscribe to access weather data."})
+
+              # Get query parameters
+              query_string = event.get("rawQueryString", "")
+              if not query_string:
+                  return _response(400, {"message": "location and tempUnit query params required"})
+
+              try:
+                  # Parse query string manually
+                  params = {}
+                  for param in query_string.split("&"):
+                      if "=" in param:
+                          key, value = param.split("=", 1)
+                          # URL-decode the value to handle %20, %2C, etc.
+                          params[key] = urllib.parse.unquote(value)
+
+                  location = params.get("location", "")
+                  temp_unit = params.get("tempUnit", "F")
+
+                  if not location:
+                      return _response(400, {"message": "location query param required"})
+
+                  units_map = {"C": "metric", "F": "imperial"}
+                  units = units_map.get(temp_unit, "metric")
+
+                  # Fetch weather from OpenWeather
+                  url = f"https://api.openweathermap.org/data/2.5/weather?q={location}&appid={OPENWEATHER_API_KEY}&units={units}"
+                  req = urllib.request.Request(url)
+                  with urllib.request.urlopen(req, timeout=5) as response:
+                      weather_data = json.loads(response.read().decode())
+
+                  return _response(200, weather_data)
+
+              except urllib.error.URLError as e:
+                  return _response(503, {"message": f"External API error: {str(e)}"})
+              except json.JSONDecodeError:
+                  return _response(502, {"message": "Invalid JSON from external API"})
+              except Exception as e:
+                  return _response(500, {"message": f"Internal error: {str(e)}"})
+
+  WeatherIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref EntitlementsApi
+      IntegrationType: AWS_PROXY
+      IntegrationMethod: POST
+      IntegrationUri: !GetAtt WeatherFunction.Arn
+      PayloadFormatVersion: '2.0'
+
+  WeatherRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref EntitlementsApi
+      RouteKey: GET /v1/services/weather
+      AuthorizationType: JWT
+      AuthorizerId: !Ref EntitlementsJwtAuthorizer
+      Target: !Sub integrations/${WeatherIntegration}
+
+  WeatherFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref WeatherFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${EntitlementsApi}/*/GET/v1/services/weather
+
+  NewsFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub ${ProjectName}-${EnvironmentName}-news
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 10
+      MemorySize: 256
+      Role: !GetAtt ServicesFunctionRole.Arn
+      Environment:
+        Variables:
+          SUBSCRIPTIONS_TABLE: !Ref SubscriptionsTable
+          CURRENTS_API_KEY: !Ref CurrentsApiKey
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import boto3
+          import urllib.request
+          import urllib.error
+
+          dynamodb = boto3.resource("dynamodb")
+          table = dynamodb.Table(os.environ["SUBSCRIPTIONS_TABLE"])
+          CURRENTS_API_KEY = os.environ["CURRENTS_API_KEY"]
+          PREMIUM_STATUSES = {"active", "trialing"}
+
+          def _response(status_code, body):
+              return {
+                  "statusCode": status_code,
+                  "headers": {"Content-Type": "application/json"},
+                  "body": json.dumps(body)
+              }
+
+          def _is_premium(user_id):
+              result = table.get_item(Key={"userId": user_id})
+              item = result.get("Item")
+              if not item:
+                  return False
+              return str(item.get("plan", "")).lower() == "premium" and str(item.get("status", "")).lower() in PREMIUM_STATUSES
+
+          def handler(event, context):
+              claims = event.get("requestContext", {}).get("authorizer", {}).get("jwt", {}).get("claims", {})
+              user_id = claims.get("sub")
+              if not user_id:
+                  return _response(401, {"message": "Unauthorized"})
+              if not _is_premium(user_id):
+                  return _response(403, {"message": "Premium feature. Subscribe to access news."})
+              
+              try:
+                  url = f"https://api.currentsapi.services/v1/latest-news?apikey={CURRENTS_API_KEY}&language=en&limit=100"
+                  req = urllib.request.Request(url)
+                  with urllib.request.urlopen(req, timeout=5) as response:
+                      news_data = json.loads(response.read().decode())
+                  return _response(200, news_data)
+              except urllib.error.URLError as e:
+                  return _response(503, {"message": f"External API error: {str(e)}"})
+              except Exception as e:
+                  return _response(500, {"message": f"Internal error: {str(e)}"})
+
+  NewsIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref EntitlementsApi
+      IntegrationType: AWS_PROXY
+      IntegrationMethod: POST
+      IntegrationUri: !GetAtt NewsFunction.Arn
+      PayloadFormatVersion: '2.0'
+
+  NewsRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref EntitlementsApi
+      RouteKey: GET /v1/services/news
+      AuthorizationType: JWT
+      AuthorizerId: !Ref EntitlementsJwtAuthorizer
+      Target: !Sub integrations/${NewsIntegration}
+
+  NewsFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref NewsFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${EntitlementsApi}/*/GET/v1/services/news
+
+  StocksFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub ${ProjectName}-${EnvironmentName}-stocks
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 10
+      MemorySize: 256
+      Role: !GetAtt ServicesFunctionRole.Arn
+      Environment:
+        Variables:
+          SUBSCRIPTIONS_TABLE: !Ref SubscriptionsTable
+          FINNHUB_API_KEY: !Ref FinnhubApiKey
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import boto3
+          import urllib.request
+          import urllib.error
+          import urllib.parse
+
+          dynamodb = boto3.resource("dynamodb")
+          table = dynamodb.Table(os.environ["SUBSCRIPTIONS_TABLE"])
+          FINNHUB_API_KEY = os.environ["FINNHUB_API_KEY"]
+          PREMIUM_STATUSES = {"active", "trialing"}
+
+          def _response(status_code, body):
+              return {
+                  "statusCode": status_code,
+                  "headers": {"Content-Type": "application/json"},
+                  "body": json.dumps(body)
+              }
+
+          def _is_premium(user_id):
+              result = table.get_item(Key={"userId": user_id})
+              item = result.get("Item")
+              if not item:
+                  return False
+              return str(item.get("plan", "")).lower() == "premium" and str(item.get("status", "")).lower() in PREMIUM_STATUSES
+
+          def handler(event, context):
+              claims = event.get("requestContext", {}).get("authorizer", {}).get("jwt", {}).get("claims", {})
+              user_id = claims.get("sub")
+              if not user_id:
+                  return _response(401, {"message": "Unauthorized"})
+              if not _is_premium(user_id):
+                  return _response(403, {"message": "Premium feature. Subscribe to access stocks."})
+              
+              query_string = event.get("rawQueryString", "")
+              if not query_string:
+                  return _response(400, {"message": "ticker query param required"})
+              
+              try:
+                  params = {}
+                  for param in query_string.split("&"):
+                      if "=" in param:
+                          key, value = param.split("=", 1)
+                          params[key] = urllib.parse.unquote(value)
+                  
+                  ticker = params.get("ticker", "").strip().upper()
+                  if not ticker:
+                      return _response(400, {"message": "ticker query param required"})
+                  
+                  url = f"https://finnhub.io/api/v1/quote?symbol={ticker}&token={FINNHUB_API_KEY}"
+                  req = urllib.request.Request(url)
+                  with urllib.request.urlopen(req, timeout=5) as response:
+                      stock_data = json.loads(response.read().decode())
+                  return _response(200, stock_data)
+              except urllib.error.URLError as e:
+                  return _response(503, {"message": f"External API error: {str(e)}"})
+              except Exception as e:
+                  return _response(500, {"message": f"Internal error: {str(e)}"})
+
+  StocksIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref EntitlementsApi
+      IntegrationType: AWS_PROXY
+      IntegrationMethod: POST
+      IntegrationUri: !GetAtt StocksFunction.Arn
+      PayloadFormatVersion: '2.0'
+
+  StocksRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref EntitlementsApi
+      RouteKey: GET /v1/services/stocks
+      AuthorizationType: JWT
+      AuthorizerId: !Ref EntitlementsJwtAuthorizer
+      Target: !Sub integrations/${StocksIntegration}
+
+  StocksFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref StocksFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${EntitlementsApi}/*/GET/v1/services/stocks
+
+  HolidaysFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub ${ProjectName}-${EnvironmentName}-holidays
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 10
+      MemorySize: 256
+      Role: !GetAtt ServicesFunctionRole.Arn
+      Environment:
+        Variables:
+          SUBSCRIPTIONS_TABLE: !Ref SubscriptionsTable
+          APININJAS_API_KEY: !Ref ApiNinjasApiKey
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import boto3
+          import urllib.request
+          import urllib.error
+
+          dynamodb = boto3.resource("dynamodb")
+          table = dynamodb.Table(os.environ["SUBSCRIPTIONS_TABLE"])
+          APININJAS_API_KEY = os.environ["APININJAS_API_KEY"]
+          PREMIUM_STATUSES = {"active", "trialing"}
+
+          def _response(status_code, body):
+              return {
+                  "statusCode": status_code,
+                  "headers": {"Content-Type": "application/json"},
+                  "body": json.dumps(body)
+              }
+
+          def _is_premium(user_id):
+              result = table.get_item(Key={"userId": user_id})
+              item = result.get("Item")
+              if not item:
+                  return False
+              return str(item.get("plan", "")).lower() == "premium" and str(item.get("status", "")).lower() in PREMIUM_STATUSES
+
+          def handler(event, context):
+              claims = event.get("requestContext", {}).get("authorizer", {}).get("jwt", {}).get("claims", {})
+              user_id = claims.get("sub")
+              if not user_id:
+                  return _response(401, {"message": "Unauthorized"})
+              if not _is_premium(user_id):
+                  return _response(403, {"message": "Premium feature. Subscribe to access holidays."})
+              
+              try:
+                  url = "https://api.api-ninjas.com/v1/publicholidays?country=US"
+                  req = urllib.request.Request(url, headers={"X-Api-Key": APININJAS_API_KEY})
+                  with urllib.request.urlopen(req, timeout=5) as response:
+                      holidays_data = json.loads(response.read().decode())
+                  return _response(200, holidays_data)
+              except urllib.error.URLError as e:
+                  return _response(503, {"message": f"External API error: {str(e)}"})
+              except Exception as e:
+                  return _response(500, {"message": f"Internal error: {str(e)}"})
+
+  HolidaysIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref EntitlementsApi
+      IntegrationType: AWS_PROXY
+      IntegrationMethod: POST
+      IntegrationUri: !GetAtt HolidaysFunction.Arn
+      PayloadFormatVersion: '2.0'
+
+  HolidaysRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref EntitlementsApi
+      RouteKey: GET /v1/services/holidays
+      AuthorizationType: JWT
+      AuthorizerId: !Ref EntitlementsJwtAuthorizer
+      Target: !Sub integrations/${HolidaysIntegration}
+
+  HolidaysFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref HolidaysFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${EntitlementsApi}/*/GET/v1/services/holidays
+
+  CryptoFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub ${ProjectName}-${EnvironmentName}-crypto
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 10
+      MemorySize: 256
+      Role: !GetAtt ServicesFunctionRole.Arn
+      Environment:
+        Variables:
+          SUBSCRIPTIONS_TABLE: !Ref SubscriptionsTable
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import boto3
+          import urllib.request
+          import urllib.error
+          import urllib.parse
+
+          dynamodb = boto3.resource("dynamodb")
+          table = dynamodb.Table(os.environ["SUBSCRIPTIONS_TABLE"])
+          PREMIUM_STATUSES = {"active", "trialing"}
+
+          def _response(status_code, body):
+              return {
+                  "statusCode": status_code,
+                  "headers": {"Content-Type": "application/json"},
+                  "body": json.dumps(body)
+              }
+
+          def _is_premium(user_id):
+              result = table.get_item(Key={"userId": user_id})
+              item = result.get("Item")
+              if not item:
+                  return False
+              return str(item.get("plan", "")).lower() == "premium" and str(item.get("status", "")).lower() in PREMIUM_STATUSES
+
+          def handler(event, context):
+              claims = event.get("requestContext", {}).get("authorizer", {}).get("jwt", {}).get("claims", {})
+              user_id = claims.get("sub")
+              if not user_id:
+                  return _response(401, {"message": "Unauthorized"})
+              if not _is_premium(user_id):
+                  return _response(403, {"message": "Premium feature. Subscribe to access crypto."})
+              
+              query_string = event.get("rawQueryString", "")
+              if not query_string:
+                  return _response(400, {"message": "ids query param required"})
+              
+              try:
+                  params = {}
+                  for param in query_string.split("&"):
+                      if "=" in param:
+                          key, value = param.split("=", 1)
+                          # URL-decode the value to handle %20, %2C, etc.
+                          params[key] = urllib.parse.unquote(value)
+                  
+                  ids = params.get("ids", "").strip()
+                  if not ids:
+                      return _response(400, {"message": "ids query param required"})
+                  
+                  url = f"https://api.coingecko.com/api/v3/simple/price?ids={ids}&vs_currencies=usd&include_24hr_change=true"
+                  req = urllib.request.Request(url)
+                  with urllib.request.urlopen(req, timeout=5) as response:
+                      crypto_data = json.loads(response.read().decode())
+                  return _response(200, crypto_data)
+              except urllib.error.URLError as e:
+                  return _response(503, {"message": f"External API error: {str(e)}"})
+              except Exception as e:
+                  return _response(500, {"message": f"Internal error: {str(e)}"})
+
+  CryptoIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref EntitlementsApi
+      IntegrationType: AWS_PROXY
+      IntegrationMethod: POST
+      IntegrationUri: !GetAtt CryptoFunction.Arn
+      PayloadFormatVersion: '2.0'
+
+  CryptoRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref EntitlementsApi
+      RouteKey: GET /v1/services/crypto
+      AuthorizationType: JWT
+      AuthorizerId: !Ref EntitlementsJwtAuthorizer
+      Target: !Sub integrations/${CryptoIntegration}
+
+  CryptoFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref CryptoFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${EntitlementsApi}/*/GET/v1/services/crypto
+
+
+Outputs:
+  SubscriptionsTableName:
+    Description: DynamoDB table storing user subscription records keyed by Cognito sub.
+    Value: !Ref SubscriptionsTable
+
+  EntitlementsFunctionName:
+    Description: Lambda function backing the entitlement lookup route.
+    Value: !Ref EntitlementsFunction
+
+  EntitlementsEndpoint:
+    Description: Frontend-ready entitlement endpoint for VITE_ENTITLEMENT_ENDPOINT.
+    Value: !Sub https://${EntitlementsApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}/v1/entitlements/me
+
+  WeatherEndpoint:
+    Description: Weather service endpoint (premium only). Query params - location (required), tempUnit (C or F, default F).
+    Value: !Sub https://${EntitlementsApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}/v1/services/weather
+
+  NewsEndpoint:
+    Description: News service endpoint (premium only). Returns latest news from Currents API.
+    Value: !Sub https://${EntitlementsApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}/v1/services/news
+
+  StocksEndpoint:
+    Description: Stocks service endpoint (premium only). Query param - ticker (required, e.g., AAPL).
+    Value: !Sub https://${EntitlementsApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}/v1/services/stocks
+
+  CryptoEndpoint:
+    Description: Crypto service endpoint (premium only). Query param - ids (required, comma-separated, e.g., bitcoin,ethereum).
+    Value: !Sub https://${EntitlementsApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}/v1/services/crypto
+
+  HolidaysEndpoint:
+    Description: Holidays service endpoint (premium only). Returns US public holidays.
+    Value: !Sub https://${EntitlementsApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}/v1/services/holidays
+
+  SportsEndpoint:
+    Description: Sports service endpoint (premium only). Query params - sport (required, e.g., baseball), league (required, e.g., mlb), startDate (optional), endDate (optional).
+    Value: !Sub https://${EntitlementsApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}/v1/services/sports
+
+  ExampleFreeRecord:
+    Description: Example default contract returned when no DynamoDB item exists.
+    Value: '{"premium":false,"plan":"free","status":"active"}'
+
+  ExamplePremiumRecord:
+    Description: Example contract returned for an active premium user.
+    Value: '{"premium":true,"plan":"premium","status":"active","currentPeriodEnd":"2026-12-31T00:00:00.000Z"}'
