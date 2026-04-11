@@ -37,7 +37,15 @@ export const Weather = ({
 
   useEffect(() => {
     if (usePremium) {
-      setWeather(backendService.data);
+      const premiumPayload = backendService.data;
+      if (premiumPayload && typeof premiumPayload === 'object' && premiumPayload.current) {
+        setWeather(premiumPayload.current);
+        setForecast(premiumPayload.forecast || null);
+      } else {
+        // Backward compatibility for older backend responses that returned only current weather
+        setWeather(premiumPayload);
+        setForecast(null);
+      }
       setLoading(backendService.loading);
       setError(backendService.error);
       return;
@@ -59,7 +67,8 @@ export const Weather = ({
         const units = unitsMap[tempUnit] || 'metric';
         
         // Fetch current weather
-        const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${location}&appid=${apiKey}&units=${units}`;
+        const encodedLocation = encodeURIComponent(location);
+        const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${encodedLocation}&appid=${apiKey}&units=${units}`;
         const weatherResponse = await fetch(weatherUrl);
         
         if (!weatherResponse.ok) {
@@ -70,7 +79,7 @@ export const Weather = ({
         setWeather(weatherData);
         
         // Fetch forecast
-        const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${location}&appid=${apiKey}&units=${units}`;
+        const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${encodedLocation}&appid=${apiKey}&units=${units}`;
         const forecastResponse = await fetch(forecastUrl);
         
         if (forecastResponse.ok) {
@@ -91,7 +100,16 @@ export const Weather = ({
     fetchWeather();
     const interval = setInterval(fetchWeather, normalizedPollIntervalMs);
     return () => clearInterval(interval);
-  }, [apiKey, location, tempUnit, normalizedPollIntervalMs]);
+  }, [
+    usePremium,
+    apiKey,
+    location,
+    tempUnit,
+    normalizedPollIntervalMs,
+    backendService.data,
+    backendService.loading,
+    backendService.error,
+  ]);
 
   const getWeatherIcon = (weatherMain) => {
     const iconProps = { sx: { fontSize: 40 } };

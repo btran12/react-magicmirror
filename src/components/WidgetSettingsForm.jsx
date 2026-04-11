@@ -89,7 +89,7 @@ const switchStyles = {
   },
 };
 
-export const WidgetSettingsForm = ({ widgetType, settings = {}, onChange }) => {
+export const WidgetSettingsForm = ({ widgetType, settings = {}, onChange, isPremium = false }) => {
   const [citySuggestions, setCitySuggestions] = useState([]);
   const [cityLoading, setCityLoading] = useState(false);
   const [draggedTickerIndex, setDraggedTickerIndex] = useState(null);
@@ -316,20 +316,22 @@ export const WidgetSettingsForm = ({ widgetType, settings = {}, onChange }) => {
               <MenuItem value="24h">24-Hour Format</MenuItem>
             </Select>
           </FormControl>
-          <TextField
-            fullWidth
-            label="OpenWeather API Key"
-            type="password"
-            value={settings.openweatherApiKey || ''}
-            onChange={(event) => updateSetting('openweatherApiKey', event.target.value)}
-            placeholder="Enter your API key"
-            helperText="Required for weather data and city suggestions (openweathermap.org/api)"
-            variant="outlined"
-            sx={{
-              ...fieldStyles,
-              '& .MuiFormHelperText-root': { color: '#999999' },
-            }}
-          />
+          {!isPremium && (
+            <TextField
+              fullWidth
+              label="OpenWeather API Key"
+              type="password"
+              value={settings.openweatherApiKey || ''}
+              onChange={(event) => updateSetting('openweatherApiKey', event.target.value)}
+              placeholder="Enter your API key"
+              helperText="Required for weather data and city suggestions (openweathermap.org/api)"
+              variant="outlined"
+              sx={{
+                ...fieldStyles,
+                '& .MuiFormHelperText-root': { color: '#999999' },
+              }}
+            />
+          )}
           {renderPollingField(
             'Poll Interval (Minutes)',
             'weatherPollIntervalMinutes',
@@ -364,34 +366,38 @@ export const WidgetSettingsForm = ({ widgetType, settings = {}, onChange }) => {
     case 'news':
       return (
         <Stack spacing={2}>
-          <TextField
-            fullWidth
-            label="Currents API Key (Primary)"
-            type="password"
-            value={settings.currentsApiKey || ''}
-            onChange={(event) => updateSetting('currentsApiKey', event.target.value)}
-            placeholder="Enter your Currents API key"
-            helperText="Get a key from currentsapi.services for primary news source"
-            variant="outlined"
-            sx={{
-              ...fieldStyles,
-              '& .MuiFormHelperText-root': { color: '#999999' },
-            }}
-          />
-          <TextField
-            fullWidth
-            label="TheNewsAPI API Key (Fallback)"
-            type="password"
-            value={settings.newsApiKey || ''}
-            onChange={(event) => updateSetting('newsApiKey', event.target.value)}
-            placeholder="Enter your TheNewsAPI key"
-            helperText="Optional fallback. Currents + Reddit used if not provided"
-            variant="outlined"
-            sx={{
-              ...fieldStyles,
-              '& .MuiFormHelperText-root': { color: '#999999' },
-            }}
-          />
+          {!isPremium && (
+            <TextField
+              fullWidth
+              label="Currents API Key (Primary)"
+              type="password"
+              value={settings.currentsApiKey || ''}
+              onChange={(event) => updateSetting('currentsApiKey', event.target.value)}
+              placeholder="Enter your Currents API key"
+              helperText="Get a key from currentsapi.services for primary news source"
+              variant="outlined"
+              sx={{
+                ...fieldStyles,
+                '& .MuiFormHelperText-root': { color: '#999999' },
+              }}
+            />
+          )}
+          {!isPremium && (
+            <TextField
+              fullWidth
+              label="TheNewsAPI API Key (Fallback)"
+              type="password"
+              value={settings.newsApiKey || ''}
+              onChange={(event) => updateSetting('newsApiKey', event.target.value)}
+              placeholder="Enter your TheNewsAPI key"
+              helperText="Optional fallback. Currents + Reddit used if not provided"
+              variant="outlined"
+              sx={{
+                ...fieldStyles,
+                '& .MuiFormHelperText-root': { color: '#999999' },
+              }}
+            />
+          )}
           {renderPollingField(
             'Poll Interval (Minutes)',
             'newsPollIntervalMinutes',
@@ -407,20 +413,22 @@ export const WidgetSettingsForm = ({ widgetType, settings = {}, onChange }) => {
           <Typography sx={{ color: '#aaaaaa', fontSize: '0.875rem' }}>
             Displays the 5 upcoming US holidays from api-ninjas.com
           </Typography>
-          <TextField
-            fullWidth
-            label="API Ninjas API Key"
-            type="password"
-            value={settings.apiNinjasApiKey || ''}
-            onChange={(event) => updateSetting('apiNinjasApiKey', event.target.value)}
-            placeholder="Enter your API Ninjas API key"
-            helperText="Get a free key from api-ninjas.com/register"
-            variant="outlined"
-            sx={{
-              ...fieldStyles,
-              '& .MuiFormHelperText-root': { color: '#999999' },
-            }}
-          />
+          {!isPremium && (
+            <TextField
+              fullWidth
+              label="API Ninjas API Key"
+              type="password"
+              value={settings.apiNinjasApiKey || ''}
+              onChange={(event) => updateSetting('apiNinjasApiKey', event.target.value)}
+              placeholder="Enter your API Ninjas API key"
+              helperText="Get a free key from api-ninjas.com/register"
+              variant="outlined"
+              sx={{
+                ...fieldStyles,
+                '& .MuiFormHelperText-root': { color: '#999999' },
+              }}
+            />
+          )}
           {renderPollingField(
             'Poll Interval (Minutes)',
             'holidaysPollIntervalMinutes',
@@ -510,20 +518,22 @@ export const WidgetSettingsForm = ({ widgetType, settings = {}, onChange }) => {
             }}
           />
           {renderLocationField()}
-          <TextField
-            fullWidth
-            label="OpenWeather API Key"
-            type="password"
-            value={settings.openweatherApiKey || ''}
-            onChange={(event) => updateSetting('openweatherApiKey', event.target.value)}
-            placeholder="Enter your API key"
-            variant="outlined"
-            helperText="Optional: enables weather-aware compliments (openweathermap.org/api)"
-            sx={{
-              ...fieldStyles,
-              '& .MuiFormHelperText-root': { color: '#999999' },
-            }}
-          />
+          {!isPremium && (
+            <TextField
+              fullWidth
+              label="OpenWeather API Key"
+              type="password"
+              value={settings.openweatherApiKey || ''}
+              onChange={(event) => updateSetting('openweatherApiKey', event.target.value)}
+              placeholder="Enter your API key"
+              variant="outlined"
+              helperText="Optional: enables weather-aware compliments (openweathermap.org/api)"
+              sx={{
+                ...fieldStyles,
+                '& .MuiFormHelperText-root': { color: '#999999' },
+              }}
+            />
+          )}
           {renderPollingField(
             'Poll Interval (Minutes)',
             'complimentsPollIntervalMinutes',
@@ -537,20 +547,22 @@ export const WidgetSettingsForm = ({ widgetType, settings = {}, onChange }) => {
       const currentTickers = settings.stockTickers || [];
       return (
         <Stack spacing={2}>
-          <TextField
-            fullWidth
-            label="Finnhub API Key"
-            type="password"
-            value={settings.finnhubApiKey || ''}
-            onChange={(event) => updateSetting('finnhubApiKey', event.target.value)}
-            placeholder="Enter your Finnhub token"
-            helperText="Free tier at finnhub.io — 60 calls/min"
-            variant="outlined"
-            sx={{
-              ...fieldStyles,
-              '& .MuiFormHelperText-root': { color: '#999999' },
-            }}
-          />
+          {!isPremium && (
+            <TextField
+              fullWidth
+              label="Finnhub API Key"
+              type="password"
+              value={settings.finnhubApiKey || ''}
+              onChange={(event) => updateSetting('finnhubApiKey', event.target.value)}
+              placeholder="Enter your Finnhub token"
+              helperText="Free tier at finnhub.io — 60 calls/min"
+              variant="outlined"
+              sx={{
+                ...fieldStyles,
+                '& .MuiFormHelperText-root': { color: '#999999' },
+              }}
+            />
+          )}
           <Box>
             <Typography sx={{ color: '#cccccc', fontSize: '0.85rem', mb: 1 }}>
               Tickers ({currentTickers.length}/10)
@@ -721,20 +733,22 @@ export const WidgetSettingsForm = ({ widgetType, settings = {}, onChange }) => {
       return (
         <Stack spacing={2}>
           {renderLocationField()}
-          <TextField
-            fullWidth
-            label="OpenWeather API Key"
-            type="password"
-            value={settings.openweatherApiKey || ''}
-            onChange={(event) => updateSetting('openweatherApiKey', event.target.value)}
-            placeholder="Enter your API key"
-            helperText="Required for air quality data (openweathermap.org/api)"
-            variant="outlined"
-            sx={{
-              ...fieldStyles,
-              '& .MuiFormHelperText-root': { color: '#999999' },
-            }}
-          />
+          {!isPremium && (
+            <TextField
+              fullWidth
+              label="OpenWeather API Key"
+              type="password"
+              value={settings.openweatherApiKey || ''}
+              onChange={(event) => updateSetting('openweatherApiKey', event.target.value)}
+              placeholder="Enter your API key"
+              helperText="Required for air quality data (openweathermap.org/api)"
+              variant="outlined"
+              sx={{
+                ...fieldStyles,
+                '& .MuiFormHelperText-root': { color: '#999999' },
+              }}
+            />
+          )}
           {renderPollingField(
             'Poll Interval (Minutes)',
             'airQualityPollIntervalMinutes',

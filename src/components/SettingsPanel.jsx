@@ -204,6 +204,7 @@ const getPremiumChipConfig = (status) => {
 export const SettingsPanel = ({ isOpen, onClose }) => {
   const { settings, layout, widgetSettings, saveDashboardConfiguration } = useContext(WidgetContext);
   const auth = useAuth();
+  const hideApiKeyFields = auth.isAuthenticated && auth.isPremium;
   const [localSettings, setLocalSettings] = useState(settings);
   const [localLayout, setLocalLayout] = useState(layout.widgets);
   const [localLayoutPreset, setLocalLayoutPreset] = useState(layout.preset);
@@ -842,66 +843,68 @@ export const SettingsPanel = ({ isOpen, onClose }) => {
             </Stack>
           </Box>
 
-          <Box>
-            <Typography sx={{ color: '#ffffff', fontWeight: 'bold', mb: 2 }}>Default Service API Keys</Typography>
-            <Stack spacing={2}>
-              <TextField
-                fullWidth
-                label="Currents API Key (News - Primary)"
-                type="password"
-                value={localSettings.currentsApiKey || ''}
-                onChange={(e) => handleDefaultSettingChange('currentsApiKey', e.target.value)}
-                placeholder="Enter default Currents API key"
-                variant="outlined"
-                sx={fieldStyles}
-              />
-              <TextField
-                fullWidth
-                label="TheNewsAPI Key (News - Fallback)"
-                type="password"
-                value={localSettings.newsApiKey || ''}
-                onChange={(e) => handleDefaultSettingChange('newsApiKey', e.target.value)}
-                placeholder="Enter default TheNewsAPI key (optional)"
-                variant="outlined"
-                sx={fieldStyles}
-              />
-              <TextField
-                fullWidth
-                label="OpenWeather API Key (Weather / Air Quality / Compliments)"
-                type="password"
-                value={localSettings.openweatherApiKey || ''}
-                onChange={(e) => handleDefaultSettingChange('openweatherApiKey', e.target.value)}
-                placeholder="Enter default OpenWeather key"
-                variant="outlined"
-                sx={fieldStyles}
-              />
-              <TextField
-                fullWidth
-                label="Finnhub API Key (Stocks)"
-                type="password"
-                value={localSettings.finnhubApiKey || ''}
-                onChange={(e) => handleDefaultSettingChange('finnhubApiKey', e.target.value)}
-                placeholder="Enter default Finnhub key"
-                variant="outlined"
-                sx={fieldStyles}
-              />
-              <TextField
-                fullWidth
-                label="API Ninjas Key (Holidays)"
-                type="password"
-                value={localSettings.apiNinjasApiKey || ''}
-                onChange={(e) => handleDefaultSettingChange('apiNinjasApiKey', e.target.value)}
-                placeholder="Enter your API Ninjas key"
-                variant="outlined"
-                sx={fieldStyles}
-              />
-              <Typography sx={{ color: '#999999', fontSize: '0.8rem' }}>
-                <strong>News:</strong> Uses Currents API (primary) with Reddit API fallback. Up to 30 rotating headlines.
-                <br />
-                <strong>Other services:</strong> Defaults are used when adding new widgets or when widget-specific keys are left empty.
-              </Typography>
-            </Stack>
-          </Box>
+          {!hideApiKeyFields && (
+            <Box>
+              <Typography sx={{ color: '#ffffff', fontWeight: 'bold', mb: 2 }}>Default Service API Keys</Typography>
+              <Stack spacing={2}>
+                <TextField
+                  fullWidth
+                  label="Currents API Key (News - Primary)"
+                  type="password"
+                  value={localSettings.currentsApiKey || ''}
+                  onChange={(e) => handleDefaultSettingChange('currentsApiKey', e.target.value)}
+                  placeholder="Enter default Currents API key"
+                  variant="outlined"
+                  sx={fieldStyles}
+                />
+                <TextField
+                  fullWidth
+                  label="TheNewsAPI Key (News - Fallback)"
+                  type="password"
+                  value={localSettings.newsApiKey || ''}
+                  onChange={(e) => handleDefaultSettingChange('newsApiKey', e.target.value)}
+                  placeholder="Enter default TheNewsAPI key (optional)"
+                  variant="outlined"
+                  sx={fieldStyles}
+                />
+                <TextField
+                  fullWidth
+                  label="OpenWeather API Key (Weather / Air Quality / Compliments)"
+                  type="password"
+                  value={localSettings.openweatherApiKey || ''}
+                  onChange={(e) => handleDefaultSettingChange('openweatherApiKey', e.target.value)}
+                  placeholder="Enter default OpenWeather key"
+                  variant="outlined"
+                  sx={fieldStyles}
+                />
+                <TextField
+                  fullWidth
+                  label="Finnhub API Key (Stocks)"
+                  type="password"
+                  value={localSettings.finnhubApiKey || ''}
+                  onChange={(e) => handleDefaultSettingChange('finnhubApiKey', e.target.value)}
+                  placeholder="Enter default Finnhub key"
+                  variant="outlined"
+                  sx={fieldStyles}
+                />
+                <TextField
+                  fullWidth
+                  label="API Ninjas Key (Holidays)"
+                  type="password"
+                  value={localSettings.apiNinjasApiKey || ''}
+                  onChange={(e) => handleDefaultSettingChange('apiNinjasApiKey', e.target.value)}
+                  placeholder="Enter your API Ninjas key"
+                  variant="outlined"
+                  sx={fieldStyles}
+                />
+                <Typography sx={{ color: '#999999', fontSize: '0.8rem' }}>
+                  <strong>News:</strong> Uses Currents API (primary) with Reddit API fallback. Up to 30 rotating headlines.
+                  <br />
+                  <strong>Other services:</strong> Defaults are used when adding new widgets or when widget-specific keys are left empty.
+                </Typography>
+              </Stack>
+            </Box>
+          )}
         </Stack>
       </DialogContent>
 

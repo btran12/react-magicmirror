@@ -493,6 +493,7 @@ export const Dashboard = () => {
                 widgetType={slotEditor.widgetType}
                 settings={slotEditor.settings}
                 onChange={handleSlotSettingChange}
+                isPremium={isPremium}
               />
             ) : (
               <Box

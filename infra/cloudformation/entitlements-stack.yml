@@ -337,8 +337,8 @@ Resources:
                   for param in query_string.split("&"):
                       if "=" in param:
                           key, value = param.split("=", 1)
-                          # URL-decode the value to handle %20, %2C, etc.
-                          params[key] = urllib.parse.unquote(value)
+                          # URL-decode the value to handle %20 and + spaces.
+                          params[key] = urllib.parse.unquote_plus(value)
 
                   location = params.get("location", "")
                   temp_unit = params.get("tempUnit", "F")
@@ -348,14 +348,24 @@ Resources:
 
                   units_map = {"C": "metric", "F": "imperial"}
                   units = units_map.get(temp_unit, "metric")
+                  encoded_location = urllib.parse.quote_plus(location)
 
-                  # Fetch weather from OpenWeather
-                  url = f"https://api.openweathermap.org/data/2.5/weather?q={location}&appid={OPENWEATHER_API_KEY}&units={units}"
-                  req = urllib.request.Request(url)
-                  with urllib.request.urlopen(req, timeout=5) as response:
+                  # Fetch current weather and forecast from OpenWeather
+                  current_url = f"https://api.openweathermap.org/data/2.5/weather?q={encoded_location}&appid={OPENWEATHER_API_KEY}&units={units}"
+                  forecast_url = f"https://api.openweathermap.org/data/2.5/forecast?q={encoded_location}&appid={OPENWEATHER_API_KEY}&units={units}"
+
+                  current_req = urllib.request.Request(current_url)
+                  with urllib.request.urlopen(current_req, timeout=5) as response:
                       weather_data = json.loads(response.read().decode())
 
-                  return _response(200, weather_data)
+                  forecast_req = urllib.request.Request(forecast_url)
+                  with urllib.request.urlopen(forecast_req, timeout=5) as response:
+                      forecast_data = json.loads(response.read().decode())
+
+                  return _response(200, {
+                      "current": weather_data,
+                      "forecast": forecast_data
+                  })
 
               except urllib.error.URLError as e:
                   return _response(503, {"message": f"External API error: {str(e)}"})
